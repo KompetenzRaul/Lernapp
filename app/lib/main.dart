@@ -49,6 +49,42 @@ class _MyHomePageState extends State<MyHomePage> {
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             // 1. Video Playlists Titel + Button
+            Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Row(
+                  mainAxisAlignment: MainAxisAlignment.start,
+                  children: [
+                    const Text(
+                      "Video Playlists",
+                      style: TextStyle(
+                        fontSize: 20,
+                        fontWeight: FontWeight.bold,
+                      ),
+                    ),
+                    const SizedBox(width: 12),
+                    Container(
+                      width: 36,
+                      height: 36,
+                      decoration: BoxDecoration(
+                        color: Colors.grey, // Hintergrundfarbe
+                        shape: BoxShape.circle, // macht ihn rund
+                      ),
+                      child: IconButton(
+                        padding: EdgeInsets.zero,
+                        iconSize: 25,
+                        onPressed: () {},
+                        icon: const Icon(
+                          Icons.add,
+                          color: Colors.white, // Farbe des Plus-Zeichens
+                        ),
+                      ),
+                    ),
+                  ],
+                ),
+              ],
+            ),
+
             // 2. Video-Kachel
             // 3. Musik Playlists Titel + Button
             // 4. Musik-Kachel
