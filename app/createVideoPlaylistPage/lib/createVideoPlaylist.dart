@@ -1,0 +1,210 @@
+import 'package:flutter/material.dart';
+
+
+void main() {
+  runApp(const MyApp());
+}
+
+class MyApp extends StatelessWidget {
+  const MyApp({super.key});
+
+  // This widget is the root of your application.
+  @override
+  Widget build(BuildContext context) {
+    return MaterialApp(
+      debugShowCheckedModeBanner: false,
+      theme: ThemeData(
+        colorScheme: ColorScheme.fromSeed(seedColor: Color(0xffe50043)),
+      ),
+      home: MyHomePage(title: 'Viducate'),
+    );
+  }
+  
+}
+
+class MyHomePage extends StatefulWidget {
+  MyHomePage({super.key, required this.title});
+
+  final String title;
+
+  @override
+  State<MyHomePage> createState() => _MyHomePageState();
+}
+
+class _MyHomePageState extends State<MyHomePage> {
+
+  @override
+  Widget build(BuildContext context) {
+
+    return Scaffold(
+      appBar: AppBar(
+        centerTitle: true,
+        backgroundColor: Color(0xffb70036),
+        shape: const RoundedRectangleBorder(
+          borderRadius: BorderRadius.only(
+            bottomLeft: Radius.circular(15),
+            bottomRight: Radius.circular(15)
+          )
+        ),
+        title: Text(
+          widget.title,
+          style: TextStyle(
+            color: Colors.white,
+            fontWeight: FontWeight.normal,
+            fontSize: 32,
+            letterSpacing: 0.8
+          ),
+        ),
+      ),
+      body: Padding(
+        padding: const EdgeInsets.symmetric(horizontal: 25, vertical: 15),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          mainAxisAlignment: MainAxisAlignment.start,
+          children: [
+            Text(
+              "Video Playlist erstellen",
+              style: TextStyle(
+                fontSize: 26,
+                fontWeight: FontWeight.w600,
+                letterSpacing: 0.5,
+                color: Color(0xff425159)
+              ),
+            ),
+
+            SizedBox(height: 30),
+
+            Row(
+              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+              children: [
+                Row(
+                  children: [
+                    Text(
+                      "Videos 1",
+                      style: TextStyle(
+                          fontSize: 24,
+                          fontWeight: FontWeight.w600,
+                          letterSpacing: 0.6,
+                          color: Color(0xff425159)
+                      ),
+                    ),
+
+                    SizedBox(width: 5),
+
+                    IconButton(
+                      onPressed: () {},
+                      icon: Icon(
+                        Icons.edit,
+                      ),
+                    ),
+                  ],
+                ),
+                
+                FloatingActionButton.extended(
+                  onPressed: () {},
+                  extendedIconLabelSpacing: 10,
+                  extendedPadding: EdgeInsets.symmetric(horizontal: 20),
+                  label: Text("Dateien öffnen", style: TextStyle(fontSize: 15, letterSpacing: 0.5),),
+                  icon: Icon(Icons.upload),
+                  foregroundColor: Colors.white,
+                  backgroundColor: Color(0xffb70036),
+                  elevation: 2.5,
+                )
+              ],
+            ),
+            SizedBox(height: 10,),
+
+            Expanded(
+              child: Container(
+                color: Colors.white,
+                child: ListView(
+                  scrollDirection: Axis.vertical,
+                  children: [
+                    ListTile( //#1
+                      title: Text(
+                        "Gravitation",
+                        style: TextStyle(
+                          fontSize: 18,
+                          fontWeight: FontWeight.w500,
+                          color: Color(0xff425159),
+                          letterSpacing: 0.6
+                        ),
+                      ),
+                      trailing: Icon(Icons.arrow_right),
+                      iconColor: Color(0xff425159),
+                      subtitle: Text("files/media/..."),
+                    ),
+                    Divider(height: 2),
+
+                    ListTile( //#2
+                      title: Text(
+                        "Ellipse",
+                        style: TextStyle(
+                            fontSize: 18,
+                            fontWeight: FontWeight.w500,
+                            color: Color(0xff425159),
+                            letterSpacing: 0.6
+                        ),
+                      ),
+                      trailing: Icon(Icons.arrow_right),
+                      iconColor: Color(0xff425159),
+                      subtitle: Text("files/media/..."),
+                    ),
+                    Divider(height: 2),
+
+                    ListTile( //#3
+                      title: Text(
+                        "Energiehaushalt eines Planeten",
+                        style: TextStyle(
+                            fontSize: 18,
+                            fontWeight: FontWeight.w500,
+                            color: Color(0xff425159),
+                            letterSpacing: 0.6
+                        ),
+                      ),
+                      trailing: Icon(Icons.arrow_right),
+                      iconColor: Color(0xff425159),
+                      subtitle: Text("files/media/..."),
+                    ),
+                    Divider(height: 2),
+
+                    ListTile( //#4
+                      title: Text(
+                        "Kegelschnitte",
+                        style: TextStyle(
+                            fontSize: 18,
+                            fontWeight: FontWeight.w500,
+                            color: Color(0xff425159),
+                            letterSpacing: 0.6
+                        ),
+                      ),
+                      trailing: Icon(Icons.arrow_right),
+                      iconColor: Color(0xff425159),
+                      subtitle: Text("files/media/..."),
+                    ),
+                    Divider(height: 2),
+
+
+                  ],
+                ),
+              ),
+            ),
+            SizedBox(height: 20,),
+
+            Center(
+              child: FloatingActionButton.extended(
+                onPressed: () {},
+                extendedPadding: EdgeInsets.symmetric(horizontal: 120),
+                label: Text("Erstellen", style: TextStyle(fontSize: 15, letterSpacing: 0.5),),
+                icon: Icon(Icons.check),
+                foregroundColor: Colors.white,
+                backgroundColor: Color(0xffb70036),
+                elevation: 2.5,
+              ),
+            )
+          ],
+        ),
+      ) //
+    );
+  }
+}
