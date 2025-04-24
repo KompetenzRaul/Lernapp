@@ -1,8 +1,11 @@
 import 'package:flutter/material.dart';
 
+import 'pages/createMusicPlaylist.dart';
+import 'pages/createVideoPlaylist.dart';
+
 
 void main() {
-  runApp(const MyApp());
+  runApp(MyApp());
 }
 
 class MyApp extends StatelessWidget {
@@ -13,17 +16,22 @@ class MyApp extends StatelessWidget {
   Widget build(BuildContext context) {
     return MaterialApp(
       debugShowCheckedModeBanner: false,
+      routes: {
+        '/': (context) => MyHomePage(title: "Viducate"),
+        '/createMusicPlaylist': (context) => CreateMusicPlaylistPage(),
+        '/createVideoPlaylist': (context) => CreateVideoPlaylistPage(),
+      },
+      initialRoute: '/',
       theme: ThemeData(
         colorScheme: ColorScheme.fromSeed(seedColor: Color(0xffe50043)),
       ),
-      home: MyHomePage(title: 'Viducate'),
     );
   }
 
 }
 
 class MyHomePage extends StatefulWidget {
-  MyHomePage({super.key, required this.title});
+  const MyHomePage({super.key, required this.title});
 
   final String title;
 
@@ -38,17 +46,21 @@ class _MyHomePageState extends State<MyHomePage> {
     return Scaffold(
       appBar: AppBar(
         title: Text(widget.title),
+        centerTitle: true
       ),
       body: Column(
         children: [
-          ElevatedButton(
-            onPressed: () {},
-            child: Text("go to addMusikPlaylistPage"),
+          FilledButton(
+            onPressed: () {
+              Navigator.pushNamed(context, '/createMusicPlaylist');
+            },
+            child: Text("Musik"),
           ),
-
-          ElevatedButton(
-            onPressed: () {},
-            child: Text("go to addVideoPlaylistPage"),
+          FilledButton(
+            onPressed: () {
+              Navigator.pushNamed(context, '/createVideoPlaylist');
+            },
+            child: Text("Videos"),
           )
         ],
       ),

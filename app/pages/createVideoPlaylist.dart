@@ -1,7 +1,9 @@
 import 'package:flutter/material.dart';
 
-class createVideoPlaylistPage extends StatelessWidget {
-  const createVideoPlaylistPage({super.key});
+class CreateVideoPlaylistPage extends StatelessWidget {
+  const CreateVideoPlaylistPage({super.key});
+
+
 
   @override
   Widget build(BuildContext context) {

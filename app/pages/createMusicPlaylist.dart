@@ -2,6 +2,8 @@ import 'package:flutter/material.dart';
 
 
 class CreateMusicPlaylistPage extends StatelessWidget {
+  const CreateMusicPlaylistPage({super.key});
+
 
   @override
   Widget build(BuildContext context) {
@@ -49,7 +51,7 @@ class CreateMusicPlaylistPage extends StatelessWidget {
                   Row(
                     children: [
                       Text(
-                        "Musik",
+                        "Musik 1",
                         style: TextStyle(
                             fontSize: 24,
                             fontWeight: FontWeight.w600,
@@ -91,7 +93,7 @@ class CreateMusicPlaylistPage extends StatelessWidget {
                     children: [
                       ListTile( //#1
                         title: Text(
-                          "Gravitation",
+                          "Never gonna give you up",
                           style: TextStyle(
                               fontSize: 18,
                               fontWeight: FontWeight.w500,
@@ -101,13 +103,13 @@ class CreateMusicPlaylistPage extends StatelessWidget {
                         ),
                         trailing: Icon(Icons.arrow_right),
                         iconColor: Color(0xff425159),
-                        subtitle: Text("files/media/..."),
+                        subtitle: Text("Rick Astley"),
                       ),
                       Divider(height: 2),
 
                       ListTile( //#2
                         title: Text(
-                          "Ellipse",
+                          "Sandstorm",
                           style: TextStyle(
                               fontSize: 18,
                               fontWeight: FontWeight.w500,
@@ -117,13 +119,13 @@ class CreateMusicPlaylistPage extends StatelessWidget {
                         ),
                         trailing: Icon(Icons.arrow_right),
                         iconColor: Color(0xff425159),
-                        subtitle: Text("files/media/..."),
+                        subtitle: Text("Darude"),
                       ),
                       Divider(height: 2),
 
                       ListTile( //#3
                         title: Text(
-                          "Energiehaushalt eines Planeten",
+                          "Everytime we touch",
                           style: TextStyle(
                               fontSize: 18,
                               fontWeight: FontWeight.w500,
@@ -133,13 +135,13 @@ class CreateMusicPlaylistPage extends StatelessWidget {
                         ),
                         trailing: Icon(Icons.arrow_right),
                         iconColor: Color(0xff425159),
-                        subtitle: Text("files/media/..."),
+                        subtitle: Text("Cascada"),
                       ),
                       Divider(height: 2),
 
                       ListTile( //#4
                         title: Text(
-                          "Kegelschnitte",
+                          "Cotton Eye Joe",
                           style: TextStyle(
                               fontSize: 18,
                               fontWeight: FontWeight.w500,
@@ -149,7 +151,7 @@ class CreateMusicPlaylistPage extends StatelessWidget {
                         ),
                         trailing: Icon(Icons.arrow_right),
                         iconColor: Color(0xff425159),
-                        subtitle: Text("files/media/..."),
+                        subtitle: Text("Rednex"),
                       ),
                       Divider(height: 2),
 
