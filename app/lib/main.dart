@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:smooth_page_indicator/smooth_page_indicator.dart';
 
 void main() {
   runApp(const MyApp());
@@ -38,24 +39,10 @@ class MyHomePage extends StatefulWidget {
   State<MyHomePage> createState() => _MyHomePageState();
 }
 
-Widget _buildPlaylistPage(int pageIndex) {
-  return Padding(
-    padding: const EdgeInsets.all(12.0),
-    child: Row(
-      mainAxisAlignment: MainAxisAlignment.spaceEvenly,
-      children: List.generate(3, (index) {
-        return _buildPlaylistCard(
-          "Astronomie ${(pageIndex - 1) * 3 + index + 1}",
-        );
-      }),
-    ),
-  );
-}
-
 Widget _buildPlaylistCard(String name) {
   return Container(
     width: 100,
-    height: 140,
+    height: 180,
     padding: const EdgeInsets.all(12),
     decoration: BoxDecoration(
       color: Colors.white,
@@ -65,7 +52,7 @@ Widget _buildPlaylistCard(String name) {
       ],
     ),
     child: Column(
-      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+      mainAxisSize: MainAxisSize.min,
       children: [
         Text(name, textAlign: TextAlign.center),
         const SizedBox(height: 8),
@@ -75,17 +62,32 @@ Widget _buildPlaylistCard(String name) {
             color: Colors.transparent,
             borderRadius: BorderRadius.circular(20),
           ),
-          child: OutlinedButton(
-            style: OutlinedButton.styleFrom(
-              padding: const EdgeInsets.symmetric(vertical: 16),
-              foregroundColor: Colors.grey,
-              textStyle: const TextStyle(fontSize: 12),
-              shape: RoundedRectangleBorder(
-                borderRadius: BorderRadius.circular(20),
+          child: OutlinedButton.icon(
+            onPressed: () {},
+            icon: const Icon(
+              Icons.add,
+              size: 16,
+              color: Color(0xFF6C6C6C), // graues Icon
+            ),
+            label: const Text(
+              "Auswählen",
+              style: TextStyle(
+                fontSize: 14,
+                fontWeight: FontWeight.w500,
+                color: Color(0xFF6C6C6C), // grauer Text
               ),
             ),
-            onPressed: () {},
-            child: const Text("Auswählen"),
+            style: OutlinedButton.styleFrom(
+              side: const BorderSide(
+                color: Color(0xFF6C6C6C), // grauer Rahmen
+                width: 1,
+              ),
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(30), // pillenförmig
+              ),
+              padding: const EdgeInsets.symmetric(vertical: 8, horizontal: 16),
+              backgroundColor: Colors.transparent,
+            ),
           ),
         ),
       ],
@@ -94,7 +96,19 @@ Widget _buildPlaylistCard(String name) {
 }
 
 class _MyHomePageState extends State<MyHomePage> {
+  final PageController _pageController = PageController(viewportFraction: 0.85);
+  int _currentPage = 0;
+
   @override
+  void initState() {
+    super.initState();
+    _pageController.addListener(() {
+      setState(() {
+        _currentPage = _pageController.page!.round();
+      });
+    });
+  }
+
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(centerTitle: true, title: Text(widget.title)),
@@ -122,8 +136,8 @@ class _MyHomePageState extends State<MyHomePage> {
                       width: 36,
                       height: 36,
                       decoration: BoxDecoration(
-                        color: Colors.grey, // Hintergrundfarbe
-                        shape: BoxShape.circle, // macht ihn rund
+                        color: Colors.grey,
+                        shape: BoxShape.circle,
                       ),
                       child: IconButton(
                         padding: EdgeInsets.zero,
@@ -145,8 +159,31 @@ class _MyHomePageState extends State<MyHomePage> {
                     color: const Color(0x80B3001B), // transparentes Rot
                     borderRadius: BorderRadius.circular(16),
                   ),
-                  child: PageView(
-                    children: [_buildPlaylistPage(1), _buildPlaylistPage(2)],
+                  child: PageView.builder(
+                    controller: _pageController,
+                    itemCount: 6,
+                    itemBuilder: (context, index) {
+                      return Padding(
+                        padding: const EdgeInsets.symmetric(
+                          horizontal: 12.0,
+                          vertical: 12.0,
+                        ),
+                        child: _buildPlaylistCard("Astronomie ${index + 1}"),
+                      );
+                    },
+                  ),
+                ),
+                const SizedBox(height: 12),
+                Center(
+                  child: SmoothPageIndicator(
+                    controller: _pageController,
+                    count: 6,
+                    effect: WormEffect(
+                      dotHeight: 10,
+                      dotWidth: 10,
+                      activeDotColor: Color(0xFFB3001B),
+                      dotColor: Colors.grey.shade300,
+                    ),
                   ),
                 ),
               ],
