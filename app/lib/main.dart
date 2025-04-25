@@ -96,18 +96,12 @@ Widget _buildPlaylistCard(String name) {
 }
 
 class _MyHomePageState extends State<MyHomePage> {
-  final PageController _pageController = PageController(viewportFraction: 0.85);
-  int _currentPage = 0;
+  final PageController _videoController = PageController(viewportFraction: 0.85);
+  final PageController _musicController = PageController(viewportFraction: 0.85);
 
-  @override
-  void initState() {
-    super.initState();
-    _pageController.addListener(() {
-      setState(() {
-        _currentPage = _pageController.page!.round();
-      });
-    });
-  }
+  
+
+ 
 
   Widget build(BuildContext context) {
     return Scaffold(
@@ -160,7 +154,7 @@ class _MyHomePageState extends State<MyHomePage> {
                     borderRadius: BorderRadius.circular(16),
                   ),
                   child: PageView.builder(
-                    controller: _pageController,
+                    controller: _videoController,
                     itemCount: 6,
                     itemBuilder: (context, index) {
                       return Padding(
@@ -173,23 +167,99 @@ class _MyHomePageState extends State<MyHomePage> {
                     },
                   ),
                 ),
-                const SizedBox(height: 12),
-                Center(
-                  child: SmoothPageIndicator(
-                    controller: _pageController,
-                    count: 6,
-                    effect: WormEffect(
-                      dotHeight: 10,
-                      dotWidth: 10,
-                      activeDotColor: Color(0xFFB3001B),
-                      dotColor: Colors.grey.shade300,
+                const SizedBox(),
+                Padding(
+                  padding: const EdgeInsets.only(),
+                  child: Center(
+                    child: SmoothPageIndicator(
+                      controller: _videoController,
+                      count: 6,
+                      effect: WormEffect(
+                        dotHeight: 10,
+                        dotWidth: 10,
+                        activeDotColor: Color(0xFFB3001B),
+                        dotColor: Colors.grey.shade300,
+                      ),
                     ),
                   ),
                 ),
               ],
             ),
-            // 3. Musik Playlists Titel + Button
-            // 4. Musik-Kachel
+            const SizedBox(height: 24),
+            Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Row(
+                  mainAxisAlignment: MainAxisAlignment.start,
+                  children: [
+                    const Text(
+                      "Music Playlists",
+                      style: TextStyle(
+                        fontSize: 20,
+                        fontWeight: FontWeight.bold,
+                      ),
+                    ),
+                    const SizedBox(width: 12),
+                    Container(
+                      width: 36,
+                      height: 36,
+                      decoration: BoxDecoration(
+                        color: Colors.grey,
+                        shape: BoxShape.circle,
+                      ),
+                      child: IconButton(
+                        padding: EdgeInsets.zero,
+                        iconSize: 25,
+                        onPressed: () {},
+                        icon: const Icon(
+                          Icons.add,
+                          color: Colors.white, // Farbe des Plus-Zeichens
+                        ),
+                      ),
+                    ),
+                  ],
+                ),
+                // 3. Musik Playlists Titel + Button
+                Container(
+                  height: 200,
+                  margin: const EdgeInsets.symmetric(vertical: 16),
+                  decoration: BoxDecoration(
+                    color: const Color(0x80B3001B), // transparentes Rot
+                    borderRadius: BorderRadius.circular(16),
+                  ),
+                  child: PageView.builder(
+                    controller: _musicController,
+                    itemCount: 2,
+                    itemBuilder: (context, index) {
+                      return Padding(
+                        padding: const EdgeInsets.symmetric(
+                          horizontal: 12.0,
+                          vertical: 12.0,
+                        ),
+                        child: _buildPlaylistCard("Üppings Lieblings Musik ${index + 1}"),
+                      );
+                    },
+                  ),
+                ),
+                // 4. Musik Kachel
+                const SizedBox(),
+                Padding(
+                  padding: const EdgeInsets.only(),
+                  child: Center(
+                    child: SmoothPageIndicator(
+                      controller: _musicController,
+                      count: 2,
+                      effect: WormEffect(
+                        dotHeight: 10,
+                        dotWidth: 10,
+                        activeDotColor: Color(0xFFB3001B),
+                        dotColor: Colors.grey.shade300,
+                      ),
+                    ),
+                  ),
+                ),
+              ],
+            ),
             // 5. Regler mit Verhältnis
             // 6. Abspielen-Button
           ],
