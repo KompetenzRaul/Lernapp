@@ -3,6 +3,34 @@ import 'package:flutter/material.dart';
 class CreateVideoPlaylistPage extends StatelessWidget {
   const CreateVideoPlaylistPage({super.key});
 
+  void _showRenameDialog(BuildContext context) {
+    showDialog(
+        context: context,
+        builder: (BuildContext context) {
+          return AlertDialog(
+            title: Text("Name der Playlist"),
+            content: TextField(
+              maxLength: 20,
+            ),
+            actions: [
+              OutlinedButton(
+                onPressed: () => Navigator.of(context).pop(),
+                child: Text("Abbrechen"),
+                style: ButtonStyle(
+
+                ),
+              ),
+
+              FilledButton(
+                onPressed: () => Navigator.of(context).pop(),
+                child: Text("Speichern"),
+              )
+            ],
+          );
+        }
+    );
+  }
+
 
 
   @override
@@ -63,7 +91,9 @@ class CreateVideoPlaylistPage extends StatelessWidget {
                       SizedBox(width: 5),
 
                       IconButton(
-                        onPressed: () {},
+                        onPressed: () {
+                          _showRenameDialog(context);
+                        },
                         icon: Icon(
                           Icons.edit,
                         ),
