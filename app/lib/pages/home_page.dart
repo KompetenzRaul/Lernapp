@@ -9,6 +9,9 @@ class HomePage extends StatefulWidget {
 }
 
 class _HomePageState extends State<HomePage> {
+  String? _selectedVideoPlaylist;
+  String? _selectedMusicPlaylist;
+
   final PageController _videoController = PageController(
     viewportFraction: 0.85,
   );
@@ -17,56 +20,80 @@ class _HomePageState extends State<HomePage> {
   );
   double _sliderValue = 0.5;
 
-  Widget _buildPlaylistCard(String name) {
-    return Container(
-      width: 100,
-      height: 180,
-      padding: const EdgeInsets.all(12),
-      decoration: BoxDecoration(
-        color: Colors.white,
-        borderRadius: BorderRadius.circular(8),
-        boxShadow: [
-          BoxShadow(color: Colors.black12, blurRadius: 4, offset: Offset(2, 2)),
-        ],
-      ),
-      child: Column(
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          Text(name, textAlign: TextAlign.center),
-          const SizedBox(height: 8),
-          Container(
-            width: double.infinity,
-            decoration: BoxDecoration(
-              color: Colors.transparent,
-              borderRadius: BorderRadius.circular(20),
+  Widget _buildPlaylistCard(String name, {required bool isVideo}) {
+  final bool isSelected = isVideo
+      ? _selectedVideoPlaylist == name
+      : _selectedMusicPlaylist == name;
+
+  return Container(
+    width: 100,
+    height: 180,
+    padding: const EdgeInsets.all(12),
+    decoration: BoxDecoration(
+      color: Colors.white,
+      borderRadius: BorderRadius.circular(8),
+      boxShadow: [
+        BoxShadow(color: Colors.black12, blurRadius: 4, offset: Offset(2, 2)),
+      ],
+    ),
+    child: Column(
+      mainAxisSize: MainAxisSize.min,
+      children: [
+        Text(name, textAlign: TextAlign.center),
+        const SizedBox(height: 8),
+        Container(
+          width: double.infinity,
+          decoration: BoxDecoration(
+            color: Colors.transparent,
+            borderRadius: BorderRadius.circular(20),
+          ),
+          child: OutlinedButton.icon(
+            onPressed: () {
+              setState(() {
+                if (isVideo) {
+                  if (_selectedVideoPlaylist == name) {
+                    _selectedVideoPlaylist = null;
+                  } else {
+                    _selectedVideoPlaylist = name;
+                  }
+                } else {
+                  if (_selectedMusicPlaylist == name) {
+                    _selectedMusicPlaylist = null;
+                  } else {
+                    _selectedMusicPlaylist = name;
+                  }
+                }
+              });
+            },
+            icon: Icon(
+              isSelected ? Icons.check : Icons.add,
+              size: 16,
+              color: isSelected ? Colors.white : Color(0xff425159),
             ),
-            child: OutlinedButton.icon(
-              onPressed: () {},
-              icon: const Icon(Icons.add, size: 16, color: Color(0xff425159)),
-              label: const Text(
-                "Auswählen",
-                style: TextStyle(
-                  fontSize: 14,
-                  fontWeight: FontWeight.w500,
-                  color: Color(0xff425159),
-                ),
+            label: Text(
+              isSelected ? "Gewählt" : "Auswählen",
+              style: TextStyle(
+                fontSize: 14,
+                fontWeight: FontWeight.w500,
+                color: isSelected ? Colors.white : Color(0xff425159),
               ),
-              style: OutlinedButton.styleFrom(
-                side: const BorderSide(color: Color(0xff425159), width: 1),
-                shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(30),
-                ),
-                padding: const EdgeInsets.symmetric(
-                  vertical: 8,
-                  horizontal: 16,
-                ),
-                backgroundColor: Colors.transparent,
+            ),
+            style: OutlinedButton.styleFrom(
+              backgroundColor: isSelected ? const Color(0xffb70036) : Colors.transparent,
+              side: BorderSide(
+                color: isSelected ? const Color(0xffb70036) : const Color(0xff425159),
+                width: 1,
               ),
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(30),
+              ),
+              padding: const EdgeInsets.symmetric(vertical: 8, horizontal: 16),
             ),
           ),
-        ],
-      ),
-    );
+        ),
+      ],
+    ),
+  );
   }
 
   @override
@@ -80,15 +107,11 @@ class _HomePageState extends State<HomePage> {
           children: [
             // Video Playlists
             _buildSectionTitle("Video Playlists"),
-            _buildPlaylistSection(_videoController, 6, "Astronomie"),
+            _buildPlaylistSection(_videoController, 6, "Astronomie", isVideo: true),
             const SizedBox(height: 24),
             // Music Playlists
             _buildSectionTitle("Music Playlists"),
-            _buildPlaylistSection(
-              _musicController,
-              2,
-              "Üppings Lieblings Musik",
-            ),
+            _buildPlaylistSection(_musicController, 2, "Üppings Lieblings Musik", isVideo: false),
             const SizedBox(height: 24),
             // Regler
             Text(
@@ -181,50 +204,53 @@ class _HomePageState extends State<HomePage> {
   }
 
   Widget _buildPlaylistSection(
-    PageController controller,
-    int itemCount,
-    String title,
-  ) {
-    return Column(
-      children: [
-        Container(
-          height: 200,
-          margin: const EdgeInsets.symmetric(vertical: 16),
-          decoration: BoxDecoration(
-            color: const Color(0xffb70036),
-            borderRadius: BorderRadius.circular(16),
-          ),
-          child: PageView.builder(
-            controller: controller,
-            itemCount: itemCount,
-            itemBuilder: (context, index) {
-              return Padding(
-                padding: const EdgeInsets.symmetric(
-                  horizontal: 12.0,
-                  vertical: 12.0,
-                ),
-                child: _buildPlaylistCard("$title ${index + 1}"),
-              );
-            },
-          ),
+  PageController controller,
+  int itemCount,
+  String title,
+  {required bool isVideo}
+) {
+  return Column(
+    children: [
+      Container(
+        height: 200,
+        margin: const EdgeInsets.symmetric(vertical: 16),
+        decoration: BoxDecoration(
+          color: const Color(0xffb70036),
+          borderRadius: BorderRadius.circular(16),
         ),
-        const SizedBox(),
-        Padding(
-          padding: const EdgeInsets.only(),
-          child: Center(
-            child: SmoothPageIndicator(
-              controller: controller,
-              count: itemCount,
-              effect: WormEffect(
-                dotHeight: 10,
-                dotWidth: 10,
-                activeDotColor: const Color(0xffb70036),
-                dotColor: Colors.grey.shade300,
+        child: PageView.builder(
+          controller: controller,
+          itemCount: itemCount,
+          itemBuilder: (context, index) {
+            return Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 12.0, vertical: 12.0),
+              child: _buildPlaylistCard(
+                "$title ${index + 1}",
+                isVideo: isVideo,
               ),
+            );
+          },
+        ),
+      ),
+      const SizedBox(),
+      Padding(
+        padding: const EdgeInsets.only(),
+        child: Center(
+          child: SmoothPageIndicator(
+            controller: controller,
+            count: itemCount,
+            effect: WormEffect(
+              dotHeight: 10,
+              dotWidth: 10,
+              activeDotColor: const Color(0xffb70036),
+              dotColor: Colors.grey.shade300,
             ),
           ),
         ),
-      ],
-    );
-  }
+      ),
+    ],
+  );
+}
+
+
 }
