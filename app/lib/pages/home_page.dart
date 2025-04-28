@@ -28,7 +28,7 @@ class _HomePageState extends State<HomePage> {
 
     return Container(
       width: 100,
-      height: 180,
+      height: 160,
       padding: const EdgeInsets.all(12),
       decoration: BoxDecoration(
         color: Colors.white,
@@ -118,7 +118,6 @@ class _HomePageState extends State<HomePage> {
               leading: Icon(Icons.settings),
               title: Text('Einstellungen'),
               onTap: () {
-                // Hier kannst du Navigation zu einer Settings-Seite machen
                 Navigator.pop(context);
               },
             ),
@@ -133,7 +132,7 @@ class _HomePageState extends State<HomePage> {
         ),
       ),
       appBar: AppBar(centerTitle: true, title: const Text('Viducate')),
-      body: Padding(
+      body: SingleChildScrollView(
         padding: const EdgeInsets.all(16.0),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
@@ -144,52 +143,48 @@ class _HomePageState extends State<HomePage> {
               6,
               "Astronomie",
               isVideo: true,
+              height: 160,
             ),
-            const SizedBox(height: 24),
+            const SizedBox(height: 16),
             _buildSectionTitle("Music Playlists"),
             _buildPlaylistSection(
               _musicController,
               2,
               "Üppings Lieblings Musik",
               isVideo: false,
+              height: 160,
             ),
-            const SizedBox(height: 24),
+            const SizedBox(height: 16),
             Text(
               "Verhältnis Video/Musik",
               style: const TextStyle(fontSize: 20, fontWeight: FontWeight.bold),
             ),
-            const SizedBox(height: 12),
-            Column(
+            const SizedBox(height: 8),
+            Slider(
+              value: _sliderValue,
+              min: 0,
+              max: 1,
+              divisions: 20,
+              activeColor: const Color(0xffb70036),
+              inactiveColor: Colors.grey.shade300,
+              label: "${(_sliderValue * 100).round()}% Video",
+              onChanged: (value) {
+                setState(() {
+                  _sliderValue = value;
+                });
+              },
+            ),
+            Row(
+              mainAxisAlignment: MainAxisAlignment.spaceBetween,
               children: [
-                Slider(
-                  value: _sliderValue,
-                  min: 0,
-                  max: 1,
-                  divisions: 20,
-                  activeColor: const Color(0xffb70036),
-                  inactiveColor: Colors.grey.shade300,
-                  label: "${(_sliderValue * 100).round()}% Video",
-                  onChanged: (value) {
-                    setState(() {
-                      _sliderValue = value;
-                    });
-                  },
-                ),
-                Row(
-                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                  children: [
-                    Text("${(_sliderValue * 100).round()}% Video"),
-                    Text("${(100 - _sliderValue * 100).round()}% Musik"),
-                  ],
-                ),
+                Text("${(_sliderValue * 100).round()}% Video"),
+                Text("${(100 - _sliderValue * 100).round()}% Musik"),
               ],
             ),
-            const SizedBox(height: 24),
+            const SizedBox(height: 16),
             Center(
               child: ElevatedButton.icon(
-                onPressed: () {
-                  // Hier Funktion zum Abspielen
-                },
+                onPressed: () {},
                 icon: const Icon(Icons.play_arrow),
                 label: const Text("Abspielen"),
                 style: ElevatedButton.styleFrom(
@@ -247,11 +242,12 @@ class _HomePageState extends State<HomePage> {
     int itemCount,
     String title, {
     required bool isVideo,
+    required double height,
   }) {
     return Column(
       children: [
         Container(
-          height: 200,
+          height: height,
           margin: const EdgeInsets.symmetric(vertical: 16),
           decoration: BoxDecoration(
             color: const Color(0xffb70036),
