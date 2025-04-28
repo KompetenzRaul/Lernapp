@@ -8,4 +8,6 @@ class MusicPlaylist{
     required this.playlistName,
     required this.playlistContent
   });
+
+
 }

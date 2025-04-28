@@ -3,6 +3,7 @@ import 'dart:io';
 import 'package:file_picker/file_picker.dart';
 import 'package:flutter/material.dart';
 
+import '../datamodels/dummyData.dart';
 import '../datamodels/musicElement.dart';
 import '../datamodels/musicPlaylist.dart';
 
@@ -16,15 +17,7 @@ class CreateMusicPlaylistPage extends StatefulWidget {
 
 class _CreateMusicPlaylistPageState extends State<CreateMusicPlaylistPage> {
 
-  MusicPlaylist dummyData = MusicPlaylist(
-    playlistName: "Test",
-    playlistContent: <MusicElement>[
-      MusicElement(name: "Hung Up", filePath: "sldfkj", artist: "Madonna"),
-      MusicElement(name: "Hung Up2", filePath: "sldfkj", artist: "Madonna"),
-      MusicElement(name: "Hung Up3", filePath: "sldfkj", artist: "Madonna"),
-      MusicElement(name: "Hung Up4", filePath: "sldfkj", artist: "Madonna"),
-    ]
-  );
+  MusicPlaylist _dummyData = DummyData.dummyDataMusic; //später wieder wegmachen
 
   void _showRenameDialog(BuildContext context) {
     showDialog(
@@ -100,7 +93,7 @@ class _CreateMusicPlaylistPageState extends State<CreateMusicPlaylistPage> {
                   Row(
                     children: [
                       Text(
-                        dummyData.playlistName,
+                        _dummyData.playlistName,
                         style: TextStyle(
                             fontSize: 24,
                             fontWeight: FontWeight.w600,
@@ -129,7 +122,7 @@ class _CreateMusicPlaylistPageState extends State<CreateMusicPlaylistPage> {
                         File file = File(result.files.single.path!);
                         print(file.path);
                         setState(() {
-                          dummyData.playlistContent.add(MusicElement(name: "Bauch Beine Po", filePath: "sldkjf", artist: "Shirin David"));
+                          _dummyData.playlistContent.add(MusicElement(name: "Bauch Beine Po", filePath: "sldkjf", artist: "Shirin David", duration: 3.18));
                         });
                       }
                     },
@@ -149,16 +142,16 @@ class _CreateMusicPlaylistPageState extends State<CreateMusicPlaylistPage> {
                 child: Container(
                   color: Colors.white,
                   child: ListView.separated(
-                    itemCount: dummyData.playlistContent.length,
+                    itemCount: _dummyData.playlistContent.length,
                     separatorBuilder: (BuildContext context, int index) {
                       return Divider(color: Color(0xff425159));
                     },
                     itemBuilder: (BuildContext context, int index) {
                       return GestureDetector(
-                          child: dummyData.playlistContent[index].toListTile(),
+                          child: _dummyData.playlistContent[index].toListTile(),
                           onLongPress: () {
                             setState(() {
-                              dummyData.playlistContent.removeAt(index);
+                              _dummyData.playlistContent.removeAt(index);
                             });
                           },
                       );

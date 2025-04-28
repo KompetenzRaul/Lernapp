@@ -1,7 +1,18 @@
 import 'package:flutter/material.dart';
 
-class CreateVideoPlaylistPage extends StatelessWidget {
+import '../datamodels/dummyData.dart';
+import '../datamodels/videoPlaylist.dart';
+
+class CreateVideoPlaylistPage extends StatefulWidget {
   const CreateVideoPlaylistPage({super.key});
+
+  @override
+  State<CreateVideoPlaylistPage> createState() => _CreateVideoPlaylistPageState();
+}
+
+class _CreateVideoPlaylistPageState extends State<CreateVideoPlaylistPage> {
+
+  VideoPlaylist _dummyData = DummyData.dummyDataVideo;
 
   void _showRenameDialog(BuildContext context) {
     showDialog(
@@ -31,8 +42,6 @@ class CreateVideoPlaylistPage extends StatelessWidget {
         }
     );
   }
-
-
 
   @override
   Widget build(BuildContext context) {
@@ -80,7 +89,7 @@ class CreateVideoPlaylistPage extends StatelessWidget {
                   Row(
                     children: [
                       Text(
-                        "Videos 1",
+                        _dummyData.playlistName,
                         style: TextStyle(
                             fontSize: 24,
                             fontWeight: FontWeight.w600,
@@ -119,76 +128,17 @@ class CreateVideoPlaylistPage extends StatelessWidget {
               Expanded(
                 child: Container(
                   color: Colors.white,
-                  child: ListView(
+                  child: ListView.separated(
                     scrollDirection: Axis.vertical,
-                    children: [
-                      ListTile( //#1
-                        title: Text(
-                          "Gravitation",
-                          style: TextStyle(
-                              fontSize: 18,
-                              fontWeight: FontWeight.w500,
-                              color: Color(0xff425159),
-                              letterSpacing: 0.6
-                          ),
-                        ),
-                        trailing: Icon(Icons.arrow_right),
-                        iconColor: Color(0xff425159),
-                        subtitle: Text("files/media/..."),
-                      ),
-                      Divider(height: 2),
+                    itemCount: _dummyData.playlistContent.length,
+                    separatorBuilder: (BuildContext context, int index) {
+                      return Divider(color: Color(0xff425159));
+                    },
+                    itemBuilder: (BuildContext context, int index) {
+                      return _dummyData.playlistContent[index].toListTile();
+                    },
 
-                      ListTile( //#2
-                        title: Text(
-                          "Ellipse",
-                          style: TextStyle(
-                              fontSize: 18,
-                              fontWeight: FontWeight.w500,
-                              color: Color(0xff425159),
-                              letterSpacing: 0.6
-                          ),
-                        ),
-                        trailing: Icon(Icons.arrow_right),
-                        iconColor: Color(0xff425159),
-                        subtitle: Text("files/media/..."),
-                      ),
-                      Divider(height: 2),
-
-                      ListTile( //#3
-                        title: Text(
-                          "Energiehaushalt eines Planeten",
-                          style: TextStyle(
-                              fontSize: 18,
-                              fontWeight: FontWeight.w500,
-                              color: Color(0xff425159),
-                              letterSpacing: 0.6
-                          ),
-                        ),
-                        trailing: Icon(Icons.arrow_right),
-                        iconColor: Color(0xff425159),
-                        subtitle: Text("files/media/..."),
-                      ),
-                      Divider(height: 2),
-
-                      ListTile( //#4
-                        title: Text(
-                          "Kegelschnitte",
-                          style: TextStyle(
-                              fontSize: 18,
-                              fontWeight: FontWeight.w500,
-                              color: Color(0xff425159),
-                              letterSpacing: 0.6
-                          ),
-                        ),
-                        trailing: Icon(Icons.arrow_right),
-                        iconColor: Color(0xff425159),
-                        subtitle: Text("files/media/..."),
-                      ),
-                      Divider(height: 2),
-
-
-                    ],
-                  ),
+                  )
                 ),
               ),
               SizedBox(height: 20,),

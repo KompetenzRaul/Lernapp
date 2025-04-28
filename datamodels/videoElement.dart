@@ -1,12 +1,13 @@
+
+
 import 'package:flutter/material.dart';
 
-class MusicElement{
+class VideoElement {
   final String name;
   final String filePath;
-  final String artist;
   final double duration;
 
-  const MusicElement({required this.name, required this.filePath, required this.artist, required this.duration});
+  const VideoElement({required this.name, required this.filePath, required this.duration});
 
   ListTile toListTile() {
     return ListTile(
@@ -19,9 +20,14 @@ class MusicElement{
             letterSpacing: 0.6
         ),
       ),
-      trailing: Icon(Icons.arrow_right),
+      trailing: Text(
+        duration.toString().replaceAll(".", ":"),
+        style: TextStyle(
+          fontSize: 14
+        ),
+      ),
       iconColor: Color(0xff425159),
-      subtitle: Text(this.artist),
+      subtitle: Text(this.filePath),
     );
   }
 }
