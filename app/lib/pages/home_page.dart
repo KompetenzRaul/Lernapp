@@ -13,10 +13,10 @@ class _HomePageState extends State<HomePage> {
   String? _selectedMusicPlaylist;
 
   final PageController _videoController = PageController(
-    viewportFraction: 0.85,
+    viewportFraction: 0.65,
   );
   final PageController _musicController = PageController(
-    viewportFraction: 0.85,
+    viewportFraction: 0.65,
   );
   double _sliderValue = 0.5;
 
@@ -32,7 +32,7 @@ class _HomePageState extends State<HomePage> {
       padding: const EdgeInsets.all(12),
       decoration: BoxDecoration(
         color: Colors.white,
-        borderRadius: BorderRadius.circular(8),
+        borderRadius: BorderRadius.circular(14),
         boxShadow: [
           BoxShadow(color: Colors.black12, blurRadius: 4, offset: Offset(2, 2)),
         ],
@@ -90,7 +90,7 @@ class _HomePageState extends State<HomePage> {
                 ),
                 padding: const EdgeInsets.symmetric(
                   vertical: 8,
-                  horizontal: 16,
+                  horizontal: 12,
                 ),
               ),
             ),
