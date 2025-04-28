@@ -19,7 +19,12 @@ class MusicElement{
             letterSpacing: 0.6
         ),
       ),
-      trailing: Icon(Icons.arrow_right),
+      trailing: Text(
+        duration.toString().replaceAll(".", ":"),
+        style: TextStyle(
+          fontSize: 14
+        ),
+      ),
       iconColor: Color(0xff425159),
       subtitle: Text(this.artist),
     );
