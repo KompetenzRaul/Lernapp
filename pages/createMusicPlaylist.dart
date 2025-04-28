@@ -116,16 +116,7 @@ class _CreateMusicPlaylistPageState extends State<CreateMusicPlaylistPage> {
                   ),
 
                   FloatingActionButton.extended(
-                    onPressed: () async {
-                      FilePickerResult? result = await FilePicker.platform.pickFiles();
-                      if(result != null) {
-                        File file = File(result.files.single.path!);
-                        print(file.path);
-                        setState(() {
-                          _dummyData.playlistContent.add(MusicElement(name: "Bauch Beine Po", filePath: "sldkjf", artist: "Shirin David", duration: 3.18));
-                        });
-                      }
-                    },
+                    onPressed: () {},
                     extendedIconLabelSpacing: 10,
                     extendedPadding: EdgeInsets.symmetric(horizontal: 20),
                     label: Text("Dateien öffnen", style: TextStyle(fontSize: 15, letterSpacing: 0.5),),
@@ -149,11 +140,7 @@ class _CreateMusicPlaylistPageState extends State<CreateMusicPlaylistPage> {
                     itemBuilder: (BuildContext context, int index) {
                       return GestureDetector(
                           child: _dummyData.playlistContent[index].toListTile(),
-                          onLongPress: () {
-                            setState(() {
-                              _dummyData.playlistContent.removeAt(index);
-                            });
-                          },
+                          onLongPress: () {},
                       );
                     },
                   )
