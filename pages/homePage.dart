@@ -205,6 +205,9 @@ class _HomepageState extends State<Homepage> {
                 onPressed: () {
                   Navigator.of(context).pushNamed("/videoPlayer");
                 },
+                onLongPress: () {
+                  Navigator.of(context).pushNamed("/musicPlayer");
+                },
                 icon: const Icon(Icons.play_arrow),
                 label: const Text("Abspielen"),
                 style: ElevatedButton.styleFrom(
