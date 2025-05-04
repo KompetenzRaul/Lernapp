@@ -47,7 +47,6 @@ class _MusicPlayerState extends State<MusicPlayer> {
                 width: 300,
                 fit:  BoxFit.fill,
               ),
-
               // song name
               Text("Toxic - Britney Spears"),
 
