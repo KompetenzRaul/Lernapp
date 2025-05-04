@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 
 import 'pages/createMusicPlaylist.dart';
 import 'pages/createVideoPlaylist.dart';
+import 'pages/homePage.dart';
 
 
 void main() {
@@ -18,7 +19,7 @@ class MyApp extends StatelessWidget {
     return MaterialApp(
       debugShowCheckedModeBanner: false,
       routes: {
-        '/': (context) => MyHomePage(title: "Viducate"),
+        '/': (context) => Homepage(),
         '/createMusicPlaylist': (context) => CreateMusicPlaylistPage(),
         '/createVideoPlaylist': (context) => CreateVideoPlaylistPage(),
       },
@@ -28,43 +29,5 @@ class MyApp extends StatelessWidget {
       ),
     );
   }
-
 }
 
-class MyHomePage extends StatefulWidget {
-  const MyHomePage({super.key, required this.title});
-
-  final String title;
-
-  @override
-  State<MyHomePage> createState() => _MyHomePageState();
-}
-
-class _MyHomePageState extends State<MyHomePage> {
-
-  @override
-  Widget build(BuildContext context) {
-    return Scaffold(
-      appBar: AppBar(
-        title: Text(widget.title),
-        centerTitle: true
-      ),
-      body: Column(
-        children: [
-          FilledButton(
-            onPressed: () {
-              Navigator.pushNamed(context, '/createMusicPlaylist');
-            },
-            child: Text("Musik"),
-          ),
-          FilledButton(
-            onPressed: () {
-              Navigator.pushNamed(context, '/createVideoPlaylist');
-            },
-            child: Text("Videos"),
-          )
-        ],
-      ),
-    );
-  }
-}

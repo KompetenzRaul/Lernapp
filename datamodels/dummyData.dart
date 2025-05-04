@@ -7,10 +7,10 @@ class DummyData {
   static MusicPlaylist dummyDataMusic = MusicPlaylist(
       playlistName: "Test",
       playlistContent: <MusicElement>[
-        MusicElement(name: "Hung Up", filePath: "sldfkj", artist: "Madonna", duration: 3.21),
-        MusicElement(name: "Hung Up2", filePath: "sldfkj", artist: "Madonna", duration: 3.15),
-        MusicElement(name: "Hung Up3", filePath: "sldfkj", artist: "Madonna", duration: 2.57),
-        MusicElement(name: "Hung Up4", filePath: "sldfkj", artist: "Madonna", duration: 3.14),
+        MusicElement(name: "Song 1", filePath: "sldfkj", artist: "irgendwer", duration: 3.21),
+        MusicElement(name: "Song 2", filePath: "sldfkj", artist: "irgendwer", duration: 3.15),
+        MusicElement(name: "Song 3", filePath: "sldfkj", artist: "irgendwer", duration: 2.57),
+        MusicElement(name: "Song 4", filePath: "sldfkj", artist: "irgendwer", duration: 3.14),
       ]
   );
 
