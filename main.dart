@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import 'pages/createMusicPlaylist.dart';
 import 'pages/createVideoPlaylist.dart';
 import 'pages/homePage.dart';
+import 'pages/videoPlayer.dart';
 
 
 void main() {
@@ -22,6 +23,7 @@ class MyApp extends StatelessWidget {
         '/': (context) => Homepage(),
         '/createMusicPlaylist': (context) => CreateMusicPlaylistPage(),
         '/createVideoPlaylist': (context) => CreateVideoPlaylistPage(),
+        '/videoPlayer': (context) => Videoplayer(),
       },
       initialRoute: '/',
       theme: ThemeData(

@@ -133,14 +133,30 @@ class _HomepageState extends State<Homepage> {
           ],
         ),
       ),
-      appBar: AppBar(centerTitle: true, title: const Text('Viducate'), backgroundColor: Color(0xffb70036),),
+      appBar: AppBar(
+        centerTitle: true,
+        shape: const RoundedRectangleBorder(
+            borderRadius: BorderRadius.only(
+                bottomLeft: Radius.circular(15),
+                bottomRight: Radius.circular(15)
+            )
+        ),
+        title: const Text(
+          "Viducate",
+          style: TextStyle(
+            color: Colors.white,
+            fontWeight: FontWeight.normal,
+            fontSize: 32,
+            letterSpacing: 0.8
+        ),
+      ), backgroundColor: Color(0xffb70036),),
       body: SingleChildScrollView(
         padding: const EdgeInsets.all(16.0),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            _buildSectionTitle("Video Playlists", "/createVideoPlaylist"),
-            _buildPlaylistSection(
+            _buildSectionTitle("Video Playlists", "/createVideoPlaylist"), //ich hab da noch den Route String übergeben, weil wir ja auf zwei unterschiedliche Seiten wollen.
+            _buildPlaylistSection(                                         //einmal auf die VideoPlaylist-Seite und einmal auf die MusikPlaylist-Seite... - Till
               _videoController,
               6,
               "Astronomie",
@@ -148,7 +164,7 @@ class _HomepageState extends State<Homepage> {
               height: 160,
             ),
             const SizedBox(height: 16),
-            _buildSectionTitle("Music Playlists", "/createMusicPlaylist"),
+            _buildSectionTitle("Music Playlists", "/createMusicPlaylist"), //hier das gleiche
             _buildPlaylistSection(
               _musicController,
               2,
@@ -186,7 +202,9 @@ class _HomepageState extends State<Homepage> {
             const SizedBox(height: 16),
             Center(
               child: ElevatedButton.icon(
-                onPressed: () {},
+                onPressed: () {
+                  Navigator.of(context).pushNamed("/videoPlayer");
+                },
                 icon: const Icon(Icons.play_arrow),
                 label: const Text("Abspielen"),
                 style: ElevatedButton.styleFrom(
