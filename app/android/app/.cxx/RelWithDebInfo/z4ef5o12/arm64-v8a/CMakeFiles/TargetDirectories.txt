@@ -1,0 +1,2 @@
+C:/Users/raulk/Viducate/Lernapp/app/android/app/.cxx/RelWithDebInfo/z4ef5o12/arm64-v8a/CMakeFiles/edit_cache.dir
+C:/Users/raulk/Viducate/Lernapp/app/android/app/.cxx/RelWithDebInfo/z4ef5o12/arm64-v8a/CMakeFiles/rebuild_cache.dir
