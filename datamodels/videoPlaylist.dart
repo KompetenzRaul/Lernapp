@@ -1,10 +1,10 @@
 import 'videoElement.dart';
 
 class VideoPlaylist {
-  final playlistName;
-  final List<VideoElement> playlistContent;
+  String playlistName;
+  List<VideoElement> playlistContent;
 
-  const VideoPlaylist({
+  VideoPlaylist({
     required this.playlistName,
     required this.playlistContent
   });

@@ -29,7 +29,7 @@ class MyApp extends StatelessWidget {
       },
       initialRoute: '/',
       theme: ThemeData(
-        colorScheme: ColorScheme.fromSeed(seedColor: Color(0xffe50043)),
+        colorScheme: ColorScheme.fromSeed(seedColor: Color(0xffb70036), primary: Color(0xffb70036)),
       ),
     );
   }

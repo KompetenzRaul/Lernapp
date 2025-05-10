@@ -1,12 +1,12 @@
 import 'package:flutter/material.dart';
 
 class MusicElement{
-  final String name;
-  final String filePath;
-  final String artist;
-  final double duration;
+  String name;
+  String filePath;
+  String artist;
+  double duration;
 
-  const MusicElement({required this.name, required this.filePath, required this.artist, required this.duration});
+  MusicElement({required this.name, required this.filePath, required this.artist, required this.duration});
 
   ListTile toListTile() {
     return ListTile(

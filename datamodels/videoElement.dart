@@ -3,11 +3,11 @@
 import 'package:flutter/material.dart';
 
 class VideoElement {
-  final String name;
-  final String filePath;
-  final double duration;
+  String name;
+  String filePath;
+  double duration;
 
-  const VideoElement({required this.name, required this.filePath, required this.duration});
+  VideoElement({required this.name, required this.filePath, required this.duration});
 
   ListTile toListTile() {
     return ListTile(

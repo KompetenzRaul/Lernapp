@@ -13,15 +13,28 @@ class CreateVideoPlaylistPage extends StatefulWidget {
 class _CreateVideoPlaylistPageState extends State<CreateVideoPlaylistPage> {
 
   VideoPlaylist _dummyData = DummyData.dummyDataVideo;
+  final _formKey = GlobalKey<FormState>();
+  TextEditingController _playlistNameController = TextEditingController();
+
+  void submitForm() {
+    setState(() => _dummyData.playlistName = _playlistNameController.text);
+  }
 
   void _showRenameDialog(BuildContext context) {
     showDialog(
         context: context,
         builder: (BuildContext context) {
           return AlertDialog(
-            title: Text("Name der Playlist"),
-            content: TextField(
-              maxLength: 20,
+            title: Center(child: Text("Bearbeiten")),
+            content: Form(
+              key: _formKey,
+              child: TextFormField(
+                controller: _playlistNameController,
+                decoration: InputDecoration(
+                  labelText: "Name",
+                ),
+                maxLength: 20,
+              ),
             ),
             actions: [
               OutlinedButton(
@@ -34,7 +47,10 @@ class _CreateVideoPlaylistPageState extends State<CreateVideoPlaylistPage> {
               ),
 
               FilledButton(
-                onPressed: () => Navigator.of(context).pop(),
+                onPressed: () {
+                  submitForm();
+                  Navigator.of(context).pop();
+                },
                 child: Text("Speichern"),
               )
             ],
