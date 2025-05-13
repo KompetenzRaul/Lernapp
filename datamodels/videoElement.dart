@@ -12,7 +12,7 @@ class VideoElement {
   ListTile toListTile() {
     return ListTile(
       title: Text(
-        this.name,
+        name,
         style: TextStyle(
             fontSize: 18,
             fontWeight: FontWeight.w500,
@@ -27,7 +27,7 @@ class VideoElement {
         ),
       ),
       iconColor: Color(0xff425159),
-      subtitle: Text(this.filePath),
+      subtitle: Text(filePath),
     );
   }
 }

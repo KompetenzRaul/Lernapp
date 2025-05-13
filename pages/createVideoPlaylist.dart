@@ -14,7 +14,7 @@ class CreateVideoPlaylistPage extends StatefulWidget {
 }
 
 class _CreateVideoPlaylistPageState extends State<CreateVideoPlaylistPage> {
-  VideoPlaylist _dummyData = DummyData.dummyDataVideo;
+  final VideoPlaylist _dummyData = DummyData.dummyDataVideo;
 
   void _showRenameDialog(BuildContext context) {
     showDialog(
@@ -26,8 +26,8 @@ class _CreateVideoPlaylistPageState extends State<CreateVideoPlaylistPage> {
           actions: [
             OutlinedButton(
               onPressed: () => Navigator.of(context).pop(),
-              child: Text("Abbrechen"),
               style: ButtonStyle(),
+              child: Text("Abbrechen"),
             ),
 
             FilledButton(

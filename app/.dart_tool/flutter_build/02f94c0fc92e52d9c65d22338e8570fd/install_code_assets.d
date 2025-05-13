@@ -1,1 +1,0 @@
- C:\\Users\\raulk\\Viducate\\Lernapp\\app\\.dart_tool\\flutter_build\\02f94c0fc92e52d9c65d22338e8570fd\\native_assets.json: 

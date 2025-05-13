@@ -45,7 +45,7 @@ class _HomepageState extends State<Homepage> {
         children: [
           Text(name, textAlign: TextAlign.center),
           const SizedBox(height: 8),
-          Container(
+          SizedBox(
             width: double.infinity,
             child: OutlinedButton.icon(
               onPressed: () {

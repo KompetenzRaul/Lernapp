@@ -13,7 +13,7 @@ class CreateMusicPlaylistPage extends StatefulWidget {
 }
 
 class _CreateMusicPlaylistPageState extends State<CreateMusicPlaylistPage> {
-  MusicPlaylist _dummyData = DummyData.dummyDataMusic; //später wieder wegmachen
+  final MusicPlaylist _dummyData = DummyData.dummyDataMusic; //später wieder wegmachen
 
   void _showRenameDialog(BuildContext context) {
     showDialog(
@@ -25,9 +25,9 @@ class _CreateMusicPlaylistPageState extends State<CreateMusicPlaylistPage> {
           actions: [
             OutlinedButton(
               onPressed: () => Navigator.of(context).pop(),
+    
               child: Text("Abbrechen"),
-              style: ButtonStyle(),
-            ),
+        ),
 
             FilledButton(
               onPressed: () => Navigator.of(context).pop(),
