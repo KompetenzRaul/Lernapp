@@ -1,17 +1,18 @@
 import 'package:flutter/material.dart';
 
 class MusicElement{
-  final String name;
-  final String filePath;
-  final String artist;
+  final String songName;
+  final String artistName;
+  final String albumArtImagePath;
+  final String audioFilePath;
   final double duration;
 
-  const MusicElement({required this.name, required this.filePath, required this.artist, required this.duration});
+  const MusicElement({required this.songName, required this.artistName, required this.albumArtImagePath, required this.audioFilePath,  required this.duration});
 
   ListTile toListTile() {
     return ListTile(
       title: Text(
-        this.name,
+        this.songName,
         style: TextStyle(
             fontSize: 18,
             fontWeight: FontWeight.w500,
@@ -26,7 +27,7 @@ class MusicElement{
         ),
       ),
       iconColor: Color(0xff425159),
-      subtitle: Text(this.artist),
+      subtitle: Text(this.artistName),
     );
   }
 }

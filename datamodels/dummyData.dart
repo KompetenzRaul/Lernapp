@@ -3,16 +3,23 @@ import 'musicPlaylist.dart';
 import 'videoElement.dart';
 import 'videoPlaylist.dart';
 
-class DummyData {
+class DummyData{
   static MusicPlaylist dummyDataMusic = MusicPlaylist(
       playlistName: "Test",
       playlistContent: <MusicElement>[
-        MusicElement(name: "Song 1", filePath: "sldfkj", artist: "irgendwer", duration: 3.21),
-        MusicElement(name: "Song 2", filePath: "sldfkj", artist: "irgendwer", duration: 3.15),
-        MusicElement(name: "Song 3", filePath: "sldfkj", artist: "irgendwer", duration: 2.57),
-        MusicElement(name: "Song 4", filePath: "sldfkj", artist: "irgendwer", duration: 3.14),
+        MusicElement(songName: "Song 1", audioFilePath: "../assets/audio/test_song_1.mp3", artistName: "test1", duration: 3.13, albumArtImagePath: 'assets/images/test_image_1.png'),
+        MusicElement(songName: "Song 2", audioFilePath: "../assets/audio/test_song_2.mp3", artistName: "test2", duration: 3.12, albumArtImagePath: 'assets/images/test_image_2.png'),
+        MusicElement(songName: "Song 3", audioFilePath: "../assets/audio/test_song_3.mp3", artistName: "test3", duration: 3.22, albumArtImagePath: 'assets/images/test_image_3.png'),
       ]
   );
+
+  /* 
+  
+  G E T T E R S
+  
+   */
+    List<MusicElement> get songs => dummyDataMusic.playlistContent;
+
 
   static VideoPlaylist dummyDataVideo = VideoPlaylist(
     playlistName: "TestVids",
@@ -23,3 +30,7 @@ class DummyData {
     ]
   );
 }
+
+
+
+

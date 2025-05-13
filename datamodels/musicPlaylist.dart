@@ -1,13 +1,13 @@
+import 'package:flutter/material.dart';
+
 import 'musicElement.dart';
 
-class MusicPlaylist{
+class MusicPlaylist extends ChangeNotifier{
   final String playlistName;
   final List<MusicElement> playlistContent;
 
-  const MusicPlaylist({
+  MusicPlaylist({
     required this.playlistName,
-    required this.playlistContent
+    required this.playlistContent,
   });
-
-
 }
