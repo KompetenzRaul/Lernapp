@@ -173,6 +173,6 @@ class _CreateVideoPlaylistPageState extends State<CreateVideoPlaylistPage> {
             ],
           ),
         ) //
-    );;
+    );
   }
 }

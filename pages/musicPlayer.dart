@@ -1,110 +1,121 @@
 import 'package:flutter/material.dart';
+import 'package:provider/provider.dart';
+import '../datamodels/musicPlaylistProvider.dart';
 
-class MusicPlayer extends StatefulWidget {
+class MusicPlayer extends StatelessWidget {
   const MusicPlayer({super.key});
 
   @override
-  State<MusicPlayer> createState() => _MusicPlayerState();
-}
-
-class _MusicPlayerState extends State<MusicPlayer> {
-  bool _playback_toggle = false;
-  double _currentSliderValue = 50;
-
-  @override
   Widget build(BuildContext context) {
-    return Scaffold(
-        appBar: AppBar(
-          centerTitle: true,
-          backgroundColor: Color(0xffb70036),
-          shape: const RoundedRectangleBorder(
-              borderRadius: BorderRadius.only(
-                  bottomLeft: Radius.circular(15),
-                  bottomRight: Radius.circular(15)
-              )
-          ),
-          title: const Text(
-            "Viducate",
-            style: TextStyle(
-                color: Colors.white,
-                fontWeight: FontWeight.normal,
-                fontSize: 32,
-                letterSpacing: 0.8
+    return ChangeNotifierProvider(
+      create: (_) => MusicPlaylistProvider(),
+      child : Consumer<MusicPlaylistProvider>(
+      builder: (context, value, child) {
+
+        // get playlist
+        final playlist = value.playlist;
+
+        //get current song index
+        final currentSong = playlist[value.currentSongIndex ?? 0];
+
+        //return Scaffold UI
+        return Scaffold(
+          appBar: AppBar(
+            centerTitle: true,
+            backgroundColor: Color(0xffb70036),
+            shape: const RoundedRectangleBorder(
+                borderRadius: BorderRadius.only(
+                    bottomLeft: Radius.circular(15),
+                    bottomRight: Radius.circular(15)
+                )
             ),
+            title: const Text(
+              "Viducate",
+              style: TextStyle(
+                  color: Colors.white,
+                  fontWeight: FontWeight.normal,
+                  fontSize: 32,
+                  letterSpacing: 0.8
+              ),
+            ),
+
           ),
+          body: Column(
+              mainAxisAlignment: MainAxisAlignment.spaceAround,
+              children: [
 
-        ),
-        body: Column(
-            mainAxisAlignment: MainAxisAlignment.spaceAround,
-            children: [
+                SizedBox(height: 50.0,),
 
-              SizedBox(height: 50.0,),
+                // album cover image
+                Image.asset(
+                  currentSong.albumArtImagePath,
+                  height: 300,
+                  width: 300,
+                  fit:  BoxFit.fill,
+                ),
 
-              // album cover image
-              Image.asset(
-                'assets/test_image.png',
-                height: 300,
-                width: 300,
-                fit:  BoxFit.fill,
-              ),
-              // song name
-              Text("Toxic - Britney Spears"),
+                // song name
+                Text(currentSong.artistName),
 
-              Row(
-                mainAxisAlignment: MainAxisAlignment.center,
-                children: [
-                  //return
-                  IconButton(
-                    onPressed: () {
-                      //go back to last song in playlist
-                    },
-                    icon: Icon(
-                        Icons.skip_previous,
-                        color: Color(0xffb70036),
-                        size : 25.0
+                Row(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  children: [
+                    //return
+                    IconButton(
+                      onPressed: () {
+                        //go back to last song in playlist
+                        value.playPreviousSong();
+                      },
+                      icon: Icon(
+                          Icons.skip_previous,
+                          color: Color(0xffb70036),
+                          size : 25.0
+                      ),
                     ),
-                  ),
-                  //pause / resume button
-                  IconButton(
-                    icon: _playback_toggle ? Icon(Icons.play_arrow) : Icon(Icons.pause),
-                    color: Color(0xffb70036),
-
-                    onPressed: () {
-                      setState(() {
-                        _playback_toggle = !_playback_toggle;
-                      });
-                    },
-                  ),
-                  //forward
-                  IconButton(
-                    onPressed: () {
-                      //start next song in playlist
-                    },
-                    icon: Icon(
-                        Icons.skip_next,
-                        color: Color(0xffb70036),
-                        size : 25.0
+                    //pause / resume button
+                    IconButton(
+                      icon: value.isPlaying ? Icon(Icons.pause) : Icon(Icons.play_arrow),
+                      color: Color(0xffb70036),
+                      onPressed: () {
+                        value.pauseOrResume();
+                      },
                     ),
-                  ),
-                ],
-              ),
-              // song duration slider
-              Slider(
-                value : _currentSliderValue,
-                min: 0,
-                max: 100,
-                activeColor: Color(0xffb70036),
-                onChanged: (double value) {
-                  setState(() {
-                    _currentSliderValue = value;
-                  });
-                },
-              ),
-              SizedBox(
-                height: 250.00,
-              )
-            ]
-        )
+                    //forward
+                    IconButton(
+                      onPressed: () {
+                        //start next song in playlist
+                        value.playNextSong();
+                      },
+                      icon: Icon(
+                          Icons.skip_next,
+                          color: Color(0xffb70036),
+                          size : 25.0
+                      ),
+                    ),
+                  ],
+                ),
+                // song duration slider
+                Slider(
+                  min: 0,
+                  max: value.totalDuration.inSeconds.toDouble(),
+                  value : value.currentDuration.inSeconds.toDouble(),
+                  activeColor: Color(0xffb70036),
+                  onChanged: (double double) {
+                    // during when the user is sliding around
+                  },
+                  onChangeEnd: (double double) {
+                    //sliding has finished, go to that position in song duration 
+                    value.seek(Duration(seconds: double.toInt()));
+                  },
+                ),
+                SizedBox(
+                  height: 250.00,
+                )
+              ]
+          )
+        );
+      }
+    )
     );
   }
 }

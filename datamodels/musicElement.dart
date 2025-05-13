@@ -11,8 +11,12 @@ class MusicElement {
 
   MusicElement({required this.name, required this.filePath, required this.artist, required this.duration}) {
     this.uid = UId.getId();
+  final String name;
+  final String artistName;
+  final String albumArtImagePath;
+  final String audioFilePath;
+  final double duration;
 
-  }
 
   ListTile toListTile() {
     return ListTile(
