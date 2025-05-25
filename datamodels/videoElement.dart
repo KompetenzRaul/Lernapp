@@ -5,7 +5,7 @@ import 'package:flutter/material.dart';
 class VideoElement {
   final String name;
   final String filePath;
-  final double duration;
+  final String duration;
 
   const VideoElement({required this.name, required this.filePath, required this.duration});
 

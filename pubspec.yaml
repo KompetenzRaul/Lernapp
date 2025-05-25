@@ -29,6 +29,8 @@ environment:
 # versions available, run `flutter pub outdated`.
 dependencies:
   file_picker: ^10.1.7
+  flutter_media_metadata: ^1.0.0
+  video_player: ^2.6.0
   flutter:
     sdk: flutter
 

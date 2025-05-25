@@ -4,6 +4,8 @@ import '../datamodels/dummyData.dart';
 import '../datamodels/videoElement.dart';
 import '../datamodels/videoPlaylist.dart';
 import 'package:file_picker/file_picker.dart';
+import 'dart:io';
+import 'package:video_player/video_player.dart';
 
 class CreateVideoPlaylistPage extends StatefulWidget {
   const CreateVideoPlaylistPage({super.key});
@@ -118,12 +120,33 @@ class _CreateVideoPlaylistPageState extends State<CreateVideoPlaylistPage> {
                       String path = result.files.single.path!;
                       String filename = result.files.single.name;
 
+                      // VideoPlayer holen und initialisieren
+                      final controller = VideoPlayerController.file(File(path));
+                      await controller.initialize();
+                      final duration = controller.value.duration;
+                      await controller.dispose();
+
+                      // 1) Hilfsfunktion für zwei Stellen
+                      String twoDigits(int n) => n.toString().padLeft(2, '0');
+
+                      // 2) Stunden, Minuten, Sekunden extrahieren
+                      final hours = duration.inHours;
+                      final minutes = duration.inMinutes.remainder(60);
+                      final seconds = duration.inSeconds.remainder(60);
+
+                      // 3) Je nach Länge "HH:MM:SS" oder "MM:SS" bauen
+                      final formattedDuration =
+                          hours > 0
+                              ? '${twoDigits(hours)}:${twoDigits(minutes)}:${twoDigits(seconds)}'
+                              : '${twoDigits(minutes)}:${twoDigits(seconds)}';
+
                       setState(() {
                         _dummyData.playlistContent.add(
                           VideoElement(
                             name: filename,
                             filePath: path,
-                            duration: 0.0,
+                            duration:
+                                formattedDuration, // jetzt sauber "MM:SS" oder "HH:MM:SS"
                           ),
                         );
                       });

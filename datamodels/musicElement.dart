@@ -4,7 +4,7 @@ class MusicElement{
   final String name;
   final String filePath;
   final String artist;
-  final double duration;
+  final String duration;
 
   const MusicElement({required this.name, required this.filePath, required this.artist, required this.duration});
 

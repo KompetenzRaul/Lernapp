@@ -3,6 +3,8 @@ import '../datamodels/dummyData.dart';
 import '../datamodels/musicElement.dart';
 import '../datamodels/musicPlaylist.dart';
 import 'package:file_picker/file_picker.dart';
+import 'dart:io';
+import 'package:flutter_media_metadata/flutter_media_metadata.dart';
 
 class CreateMusicPlaylistPage extends StatefulWidget {
   const CreateMusicPlaylistPage({super.key});
@@ -13,7 +15,8 @@ class CreateMusicPlaylistPage extends StatefulWidget {
 }
 
 class _CreateMusicPlaylistPageState extends State<CreateMusicPlaylistPage> {
-  final MusicPlaylist _dummyData = DummyData.dummyDataMusic; //später wieder wegmachen
+  final MusicPlaylist _dummyData =
+      DummyData.dummyDataMusic; //später wieder wegmachen
 
   void _showRenameDialog(BuildContext context) {
     showDialog(
@@ -25,9 +28,9 @@ class _CreateMusicPlaylistPageState extends State<CreateMusicPlaylistPage> {
           actions: [
             OutlinedButton(
               onPressed: () => Navigator.of(context).pop(),
-    
+
               child: Text("Abbrechen"),
-        ),
+            ),
 
             FilledButton(
               onPressed: () => Navigator.of(context).pop(),
@@ -117,13 +120,33 @@ class _CreateMusicPlaylistPageState extends State<CreateMusicPlaylistPage> {
                       String path = result.files.single.path!;
                       String filename = result.files.single.name;
 
+                      final metadata = await MetadataRetriever.fromFile(
+                        File(path),
+                      );
+                      final artist = metadata.authorName ?? 'Unbekannt';
+
+                      // 1. Die Metadaten-Dauer in Millisekunden (int) holen
+                      final trackDurationMs = metadata.trackDuration ?? 0;
+
+                      // 2. In ein Duration-Objekt umwandeln
+                      final duration = Duration(
+                        milliseconds: trackDurationMs.toInt(),
+                      );
+
+                      // 3. Minuten und Sekunden extrahieren
+                      final minutes = duration.inMinutes;
+                      final seconds = duration.inSeconds % 60;
+
+                      // 4. Zwei-stellige Strings basteln und mit “:” verbinden
+                      final formattedDuration =
+                          '${minutes.toString().padLeft(2, '0')}:${seconds.toString().padLeft(2, '0')}';
                       setState(() {
                         _dummyData.playlistContent.add(
                           MusicElement(
                             name: filename,
                             filePath: path,
-                            artist: "Unbekannt",
-                            duration: 0.0,
+                            artist: artist,
+                            duration: formattedDuration,
                           ),
                         );
                       });
