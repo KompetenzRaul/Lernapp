@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import 'dummyData.dart';
 import 'musicElement.dart';
 import 'package:flutter/widgets.dart';
+import 'dart:async';
 
 class MusicPlaylistProvider extends ChangeNotifier{
 
@@ -21,9 +22,34 @@ class MusicPlaylistProvider extends ChangeNotifier{
   Duration _currentDuration = Duration.zero;
   Duration _totalDuration = Duration.zero;
 
+  StreamSubscription<Duration>? _durationSubscription;
+  StreamSubscription<Duration>? _positionSubscription;
+  StreamSubscription<void>? _completionSubscription;
+
   //constructor
-  MusicPlaylistProvider() {
-    listenToDuration();
+  MusicPlaylistProvider({this.onFinished}) {
+    // subscribe to audio events
+    _durationSubscription = _audioPlayer.onDurationChanged.listen((newDuration) {
+      _totalDuration = newDuration;
+      notifyListeners();
+    });
+    _positionSubscription = _audioPlayer.onPositionChanged.listen((newPosition) {
+      _currentDuration = newPosition;
+      notifyListeners();
+    });
+    _completionSubscription = _audioPlayer.onPlayerComplete.listen((event) {
+      if (onFinished != null) onFinished!();
+      playNextSong();
+    });
+  }
+
+  @override
+  void dispose() {
+    _durationSubscription?.cancel();
+    _positionSubscription?.cancel();
+    _completionSubscription?.cancel();
+    _audioPlayer.dispose();
+    super.dispose();
   }
 
   // initially not playing 
@@ -98,36 +124,6 @@ class MusicPlaylistProvider extends ChangeNotifier{
       }
     }
   }
-
-  // listen to duration
-  void listenToDuration() {
-
-    //listen for total duration
-    _audioPlayer.onDurationChanged.listen((newDuration) {
-      _totalDuration = newDuration; 
-      notifyListeners();
-    });
-
-    // listen for current duration
-    _audioPlayer.onPositionChanged.listen((newPosition) {
-      _currentDuration = newPosition; 
-      notifyListeners();
-    });
-
-    //listen for song completion
-    _audioPlayer.onPlayerComplete.listen((event) {
-      playNextSong();
-    });
-     
-
-  }
-
-  // dispose audio player
-  void disposeOfAudioPlayer() {
-    _audioPlayer.dispose();
-  }
-
-
 
   /* 
   
