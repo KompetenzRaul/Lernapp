@@ -27,9 +27,9 @@ class MyApp extends StatelessWidget {
         '/': (context) => Homepage(),
         '/createMusicPlaylist': (context) => CreateMusicPlaylistPage(),
         '/createVideoPlaylist': (context) => CreateVideoPlaylistPage(),
-        '/videoPlayer': (context) => Videoplayer(),
+        '/videoPlayer': (context) => Videoplayer(videoPath: "assets/Ellipse.mp4"),
         '/musicPlayer': (context) => MusicPlayer(),
-        '/playerController': (context) => PlayerController(),
+        '/playerController': (context) => PlayerController(mediaRatio:1.0 ),
       },
       initialRoute: '/',
       theme: ThemeData(

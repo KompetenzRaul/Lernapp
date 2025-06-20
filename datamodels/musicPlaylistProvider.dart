@@ -6,6 +6,7 @@ import 'package:flutter/widgets.dart';
 import 'dart:async';
 
 class MusicPlaylistProvider extends ChangeNotifier{
+  final ValueChanged<double>? onFinished;
 
   //current song playing index
   int? _currentSongIndex = 0;
@@ -37,8 +38,9 @@ class MusicPlaylistProvider extends ChangeNotifier{
       _currentDuration = newPosition;
       notifyListeners();
     });
-    _completionSubscription = _audioPlayer.onPlayerComplete.listen((event) {
-      if (onFinished != null) onFinished!();
+    _completionSubscription = _audioPlayer.onPlayerComplete.listen((_) {
+      final played = _totalDuration.inSeconds.toDouble();
+      if (onFinished != null) onFinished!(played);
       playNextSong();
     });
   }

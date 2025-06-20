@@ -3,12 +3,14 @@ import 'package:provider/provider.dart';
 import '../datamodels/musicPlaylistProvider.dart';
 
 class MusicPlayer extends StatelessWidget {
-  const MusicPlayer({super.key});
+  const MusicPlayer({super.key, this.onFinished});
+
+  final ValueChanged<double>? onFinished;
 
   @override
   Widget build(BuildContext context) {
     return ChangeNotifierProvider(
-      create: (_) => MusicPlaylistProvider(),
+      create: (_) => MusicPlaylistProvider(onFinished: onFinished),
       child : Consumer<MusicPlaylistProvider>(
       builder: (context, value, child) {
 

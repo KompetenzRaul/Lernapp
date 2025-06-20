@@ -4,8 +4,11 @@ import 'package:flutter/services.dart';
 import 'package:video_player/video_player.dart';
 
 class Videoplayer extends StatefulWidget {
-  const Videoplayer({super.key});
 
+  const Videoplayer({super.key, required this.videoPath, this.onVideoEnd});
+
+  final String videoPath;
+  final ValueChanged<double>? onVideoEnd;
   @override
   State<Videoplayer> createState() => _VideoplayerState();
 }
@@ -13,20 +16,43 @@ class Videoplayer extends StatefulWidget {
 class _VideoplayerState extends State<Videoplayer> {
   late VideoPlayerController _videoPlayerController;
   ChewieController? _chewieController;
+  bool _hasEnded = false; // Prevent multiple calls
+  VoidCallback? _onVideoEndListener;
 
   Future<void> _initializePlayer() async {
-    _videoPlayerController = VideoPlayerController.asset("assets/Ellipse.mp4");
+    _hasEnded = false; // Reset beim Initialisieren
+    _videoPlayerController = VideoPlayerController.asset(widget.videoPath);
 
     await _videoPlayerController.initialize();
+
+    _onVideoEndListener = () {
+      final value = _videoPlayerController.value;
+      // Toleranz von 500ms, falls position minimal kleiner als duration ist
+      final isEnded = value.isInitialized &&
+        !value.isPlaying &&
+        (value.duration.inMilliseconds > 0) &&
+        (value.position.inMilliseconds >= value.duration.inMilliseconds - 500);
+      if (isEnded && !_hasEnded) {
+        _hasEnded = true;
+        if (widget.onVideoEnd != null) {
+          print("Video has ended, calling callback.");
+          _chewieController?.exitFullScreen();
+          widget.onVideoEnd!(_chewieController!.videoPlayerController.value.duration.inSeconds.toDouble());
+        }
+      }
+    };
+    _videoPlayerController.addListener(_onVideoEndListener!);
 
     final controller = ChewieController(
       videoPlayerController: _videoPlayerController,
       autoPlay: false,
-      looping: true,
+      looping: false,
+      fullScreenByDefault: true,
       deviceOrientationsAfterFullScreen: [DeviceOrientation.portraitUp],
       customControls: const MaterialControls(),
       zoomAndPan: true,
       hideControlsTimer: const Duration(seconds: 3),
+      progressIndicatorDelay:const Duration(days: 1), // Es gibt gerade ein Bug in Chewie der verhindert, dass der Ladespinner verschwindet wenn er einmal auftaucht.
       additionalOptions: (context) {
         return <OptionItem>[
           OptionItem(
@@ -53,6 +79,7 @@ class _VideoplayerState extends State<Videoplayer> {
 
   @override
   void dispose() {
+    _videoPlayerController.removeListener(_onVideoEndListener!);
     _chewieController?.dispose();
     _videoPlayerController.dispose();
     super.dispose();

@@ -203,7 +203,7 @@ class _HomepageState extends State<Homepage> {
             Center(
               child: ElevatedButton.icon(
                 onPressed: () {
-                  Navigator.of(context).pushNamed("/playerController");
+                  Navigator.of(context).pushNamed("/playerController",arguments: _sliderValue);
                 },
                 icon: const Icon(Icons.play_arrow),
                 label: const Text("Abspielen"),
