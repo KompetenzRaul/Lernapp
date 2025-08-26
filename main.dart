@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 
+
 import 'pages/createMusicPlaylist.dart';
 import 'pages/createVideoPlaylist.dart';
 import 'pages/homePage.dart';
@@ -10,6 +11,7 @@ import 'pages/videoPlayer.dart';
 void main() {
   WidgetsFlutterBinding.ensureInitialized();
   runApp(MyApp());
+
 }
 
 class MyApp extends StatelessWidget {
@@ -29,7 +31,7 @@ class MyApp extends StatelessWidget {
       },
       initialRoute: '/',
       theme: ThemeData(
-        colorScheme: ColorScheme.fromSeed(seedColor: Color(0xffe50043)),
+        colorScheme: ColorScheme.fromSeed(seedColor: Color(0xffb70036), primary: Color(0xffb70036)),
       ),
     );
   }

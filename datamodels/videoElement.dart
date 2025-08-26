@@ -1,13 +1,15 @@
-
-
+import 'package:uid/uid.dart';
 import 'package:flutter/material.dart';
 
 class VideoElement {
-  final String name;
-  final String filePath;
-  final double duration;
+  String name;
+  String filePath;
+  double duration;
+  late String uid;
 
-  const VideoElement({required this.name, required this.filePath, required this.duration});
+  VideoElement({required this.name, required this.filePath, required this.duration}) {
+    this.uid = UId.getId();
+  }
 
   ListTile toListTile() {
     return ListTile(

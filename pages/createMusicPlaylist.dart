@@ -13,15 +13,28 @@ class CreateMusicPlaylistPage extends StatefulWidget {
 class _CreateMusicPlaylistPageState extends State<CreateMusicPlaylistPage> {
 
   MusicPlaylist _dummyData = DummyData.dummyDataMusic; //später wieder wegmachen
+  final _formKey = GlobalKey<FormState>();
+  TextEditingController _playlistNameController = TextEditingController();
+
+  void submitForm() {
+    setState(() => _dummyData.playlistName = _playlistNameController.text);
+  }
 
   void _showRenameDialog(BuildContext context) {
     showDialog(
       context: context,
       builder: (BuildContext context) {
         return AlertDialog(
-          title: Text("Name der Playlist"),
-          content: TextField(
-            maxLength: 20,
+          title: Center(child: Text("Bearbeiten")),
+          content: Form(
+            key: _formKey,
+            child: TextFormField(
+              controller: _playlistNameController,
+              decoration: InputDecoration(
+                labelText: "Name der Playlist",
+              ),
+              maxLength: 20,
+            ),
           ),
           actions: [
             OutlinedButton(
@@ -33,7 +46,10 @@ class _CreateMusicPlaylistPageState extends State<CreateMusicPlaylistPage> {
             ),
 
             FilledButton(
-              onPressed: () => Navigator.of(context).pop(),
+              onPressed: () {
+                submitForm();
+                Navigator.of(context).pop();
+              },
               child: Text("Speichern"),
             )
           ],
