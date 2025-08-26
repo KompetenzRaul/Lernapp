@@ -1,7 +1,11 @@
 import 'package:flutter/material.dart';
-
+import 'package:file_picker/file_picker.dart';
 import '../datamodels/dummyData.dart';
 import '../datamodels/videoPlaylist.dart';
+import '../datamodels/videoElement.dart';
+import 'dart:io';
+import 'package:video_player/video_player.dart';
+
 
 class CreateVideoPlaylistPage extends StatefulWidget {
   const CreateVideoPlaylistPage({super.key});
@@ -128,18 +132,64 @@ class _CreateVideoPlaylistPageState extends State<CreateVideoPlaylistPage> {
                   ),
 
                   FloatingActionButton.extended(
-                    onPressed: () {},
-                    extendedIconLabelSpacing: 10,
-                    extendedPadding: EdgeInsets.symmetric(horizontal: 20),
-                    label: Text("Dateien öffnen", style: TextStyle(fontSize: 15, letterSpacing: 0.5),),
-                    icon: Icon(Icons.upload),
-                    foregroundColor: Colors.white,
-                    backgroundColor: Color(0xffb70036),
-                    elevation: 2.5,
-                  )
-                ],
+                    onPressed: () async {
+                    FilePickerResult? result = await FilePicker.platform
+                        .pickFiles(
+                          type: FileType.custom,
+                          allowedExtensions: ['mp4'],
+                        );
+
+                    if (result != null && result.files.single.path != null) {
+                      String path = result.files.single.path!;
+                      String filename = result.files.single.name;
+
+                      // VideoPlayer holen und initialisieren
+                      final controller = VideoPlayerController.file(File(path));
+                      await controller.initialize();
+                      final duration = controller.value.duration;
+                      await controller.dispose();
+
+                      setState(() {
+                        _dummyData.playlistContent.add(
+                          VideoElement(
+                            name: filename,
+                            filePath: path,
+                            duration: duration.inSeconds.toDouble(),
+                          ),
+                        );
+                      });
+                    }
+                  },
+
+                  label: Text(
+                    "Dateien öffnen",
+                    style: TextStyle(fontSize: 15, letterSpacing: 0.5),
+                  ),
+                  icon: Icon(Icons.upload),
+                  foregroundColor: Colors.white,
+                  backgroundColor: Color(0xffb70036),
+                  elevation: 2.5,
+                ),
+              ],
+            ),
+            SizedBox(height: 10),
+
+            Expanded(
+              child: Container(
+                color: Colors.white,
+                child: ListView.separated(
+                  scrollDirection: Axis.vertical,
+                  itemCount: _dummyData.playlistContent.length,
+                  separatorBuilder: (BuildContext context, int index) {
+                    return Divider(color: Color(0xff425159));
+                  },
+                  itemBuilder: (BuildContext context, int index) {
+                    return _dummyData.playlistContent[index].toListTile();
+                  },
+                ),
               ),
-              SizedBox(height: 10,),
+            ),
+            SizedBox(height: 20),
 
               Expanded(
                 child: Container(

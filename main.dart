@@ -1,6 +1,4 @@
 import 'package:flutter/material.dart';
-
-
 import 'pages/createMusicPlaylist.dart';
 import 'pages/createVideoPlaylist.dart';
 import 'pages/homePage.dart';
