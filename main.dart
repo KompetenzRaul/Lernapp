@@ -5,7 +5,6 @@ import 'pages/createMusicPlaylist.dart';
 import 'pages/createVideoPlaylist.dart';
 import 'pages/homePage.dart';
 import 'pages/musicPlayer.dart';
-import 'pages/playerController.dart';
 import 'pages/videoPlayer.dart';
 
 
@@ -29,7 +28,6 @@ class MyApp extends StatelessWidget {
         '/createVideoPlaylist': (context) => CreateVideoPlaylistPage(),
         '/videoPlayer': (context) => Videoplayer(videoPath: "assets/Ellipse.mp4"),
         '/musicPlayer': (context) => MusicPlayer(),
-        '/playerController': (context) => PlayerController(mediaRatio:1.0 ),
       },
       initialRoute: '/',
       theme: ThemeData(

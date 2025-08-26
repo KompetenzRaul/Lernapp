@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:smooth_page_indicator/smooth_page_indicator.dart';
+import 'playerController.dart';
 
 class Homepage extends StatefulWidget {
   const Homepage({super.key});
@@ -203,7 +204,11 @@ class _HomepageState extends State<Homepage> {
             Center(
               child: ElevatedButton.icon(
                 onPressed: () {
-                  Navigator.of(context).pushNamed("/playerController",arguments: _sliderValue);
+                  Navigator.of(context).push(
+                    MaterialPageRoute(
+                      builder: (context) => PlayerController(mediaRatio: _sliderValue),
+                    ),
+                  );
                 },
                 icon: const Icon(Icons.play_arrow),
                 label: const Text("Abspielen"),

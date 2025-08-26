@@ -7,9 +7,9 @@ class DummyData{
   static MusicPlaylist dummyDataMusic = MusicPlaylist(
       playlistName: "Test",
       playlistContent: <MusicElement>[
-        MusicElement(songName: "Song 1", audioFilePath: "../assets/audio/test_song_1.mp3", artistName: "test1", duration: 3.13, albumArtImagePath: 'assets/images/test_image_1.png'),
-        MusicElement(songName: "Song 2", audioFilePath: "../assets/audio/test_song_2.mp3", artistName: "test2", duration: 3.12, albumArtImagePath: 'assets/images/test_image_2.png'),
-        MusicElement(songName: "Song 3", audioFilePath: "../assets/audio/test_song_3.mp3", artistName: "test3", duration: 3.22, albumArtImagePath: 'assets/images/test_image_3.png'),
+        MusicElement(name: "Song 1", filePath: "../assets/audio/test_song_1.mp3", artist: "test1", duration: 3.13, albumArtImagePath: 'assets/images/test_image_1.png'),
+        MusicElement(name: "Song 2", filePath: "../assets/audio/test_song_2.mp3", artist: "test2", duration: 3.12, albumArtImagePath: 'assets/images/test_image_2.png'),
+        MusicElement(name: "Song 3", filePath: "../assets/audio/test_song_3.mp3", artist: "test3", duration: 3.22, albumArtImagePath: 'assets/images/test_image_3.png'),
       ]
   );
 

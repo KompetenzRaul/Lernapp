@@ -57,7 +57,7 @@ class MusicPlayer extends StatelessWidget {
                 ),
 
                 // song name
-                Text(currentSong.artistName),
+                Text(currentSong.name),
 
                 Row(
                   mainAxisAlignment: MainAxisAlignment.center,
