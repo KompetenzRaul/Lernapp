@@ -1,12 +1,18 @@
 import 'package:flutter/material.dart';
+import 'package:uid/uid.dart';
 
-class MusicElement{
+
+class MusicElement {
   String name;
   String filePath;
   String artist;
+  late String uid;
   double duration;
 
-  MusicElement({required this.name, required this.filePath, required this.artist, required this.duration});
+  MusicElement({required this.name, required this.filePath, required this.artist, required this.duration}) {
+    this.uid = UId.getId();
+
+  }
 
   ListTile toListTile() {
     return ListTile(
@@ -26,7 +32,7 @@ class MusicElement{
         ),
       ),
       iconColor: Color(0xff425159),
-      subtitle: Text(this.artist),
+      subtitle: Text(this.uid),
     );
   }
 }

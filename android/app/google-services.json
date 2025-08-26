@@ -1,0 +1,29 @@
+{
+  "project_info": {
+    "project_number": "993089621695",
+    "project_id": "viducate-9a45c",
+    "storage_bucket": "viducate-9a45c.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:993089621695:android:586d46ddc7b11ad2c2800a",
+        "android_client_info": {
+          "package_name": "de.theinze.flutter_testprojekt"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyCokyN16MFOio6c2rc-LQTI_5VMZimzfV8"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}
