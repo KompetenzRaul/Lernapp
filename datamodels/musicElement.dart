@@ -7,7 +7,6 @@ class MusicElement {
   String artist;
   late String uid;
   double duration;
-
   String albumArtImagePath;
 
   MusicElement({

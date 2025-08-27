@@ -4,11 +4,14 @@ import 'pages/createVideoPlaylist.dart';
 import 'pages/homePage.dart';
 import 'pages/musicPlayer.dart';
 import 'pages/videoPlayer.dart';
+import 'package:metadata_god/metadata_god.dart';
 
 
-void main() {
+
+void main() async{
   WidgetsFlutterBinding.ensureInitialized();
   runApp(MyApp());
+  await MetadataGod.initialize();
 
 }
 
