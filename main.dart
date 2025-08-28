@@ -5,14 +5,33 @@ import 'pages/homePage.dart';
 import 'pages/musicPlayer.dart';
 import 'pages/videoPlayer.dart';
 import 'package:metadata_god/metadata_god.dart';
+import 'package:firebase_core/firebase_core.dart';
 
-
-
-void main() async{
+void main() async {
   WidgetsFlutterBinding.ensureInitialized();
   runApp(MyApp());
-  await MetadataGod.initialize();
 
+  _initServices();
+}
+
+Future<void> _initServices() async {
+  // Firebase init
+  try {
+    await Firebase.initializeApp();
+    debugPrint('Firebase initialized ✅');
+  } catch (e, st) {
+    debugPrint('Firebase init error: $e');
+    debugPrintStack(stackTrace: st);
+  }
+
+  // MetadataGod init
+  try {
+    await MetadataGod.initialize();
+    debugPrint('MetadataGod initialized ✅');
+  } catch (e, st) {
+    debugPrint('MetadataGod init error: $e');
+    debugPrintStack(stackTrace: st);
+  }
 }
 
 class MyApp extends StatelessWidget {
@@ -27,14 +46,17 @@ class MyApp extends StatelessWidget {
         '/': (context) => Homepage(),
         '/createMusicPlaylist': (context) => CreateMusicPlaylistPage(),
         '/createVideoPlaylist': (context) => CreateVideoPlaylistPage(),
-        '/videoPlayer': (context) => Videoplayer(videoPath: "assets/Ellipse.mp4"),
+        '/videoPlayer':
+            (context) => Videoplayer(videoPath: "assets/Ellipse.mp4"),
         '/musicPlayer': (context) => MusicPlayer(),
       },
       initialRoute: '/',
       theme: ThemeData(
-        colorScheme: ColorScheme.fromSeed(seedColor: Color(0xffb70036), primary: Color(0xffb70036)),
+        colorScheme: ColorScheme.fromSeed(
+          seedColor: Color(0xffb70036),
+          primary: Color(0xffb70036),
+        ),
       ),
     );
   }
 }
-
