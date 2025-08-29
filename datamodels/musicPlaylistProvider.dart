@@ -1,35 +1,18 @@
-import 'package:audioplayers/audioplayers.dart';
-import 'package:flutter/material.dart';
-import 'dummyData.dart';
-import 'musicElement.dart';
-import 'package:flutter/widgets.dart';
 import 'dart:async';
+import 'package:flutter/foundation.dart';
+import 'package:flutter/material.dart';
+import 'package:audioplayers/audioplayers.dart';
 
-class MusicPlaylistProvider extends ChangeNotifier{
-  final ValueChanged<double>? onFinished;
+// Deine Models
+import '../datamodels/musicElement.dart';
+import '../datamodels/musicPlaylist.dart';
 
-  //current song playing index
-  int? _currentSongIndex = 0;
-  /* 
-  
-  A U D I O P L A Y E R
+// Firestore-Repo
+import '../repository/firestore_repository.dart';
 
-   */
-
-  //audioplayer
-  final AudioPlayer _audioPlayer = AudioPlayer();
-
-  //durations
-  Duration _currentDuration = Duration.zero;
-  Duration _totalDuration = Duration.zero;
-
-  StreamSubscription<Duration>? _durationSubscription;
-  StreamSubscription<Duration>? _positionSubscription;
-  StreamSubscription<void>? _completionSubscription;
-
-  //constructor
-  MusicPlaylistProvider({this.onFinished}) {
-    // subscribe to audio events
+class MusicPlaylistProvider extends ChangeNotifier {
+  MusicPlaylistProvider(this._repo, {this.onFinished}) {
+    // Audio-Events abonnieren (wie zuvor)
     _durationSubscription = _audioPlayer.onDurationChanged.listen((newDuration) {
       _totalDuration = newDuration;
       notifyListeners();
@@ -45,43 +28,126 @@ class MusicPlaylistProvider extends ChangeNotifier{
     });
   }
 
-  @override
-  void dispose() {
-    _durationSubscription?.cancel();
-    _positionSubscription?.cancel();
-    _completionSubscription?.cancel();
-    _audioPlayer.dispose();
-    super.dispose();
+  final FirestoreRepository _repo;
+  final ValueChanged<double>? onFinished;
+
+  // ---------------------------
+  // Firestore-Streams / State
+  // ---------------------------
+  StreamSubscription<List<MusicPlaylist>>? _playlistsSub;
+  String? _activePlaylistId;
+
+  // Die aktuell sichtbare/aktive Songliste (ersetzt DummyData().songs)
+  List<MusicElement> _playlist = [];
+  List<MusicElement> get playlist => _playlist;
+
+  // Optional: Falls du die Liste der Playlists brauchst (UI bleibt aber unverändert)
+  List<MusicPlaylist> _allPlaylists = [];
+  List<MusicPlaylist> get allPlaylists => _allPlaylists;
+
+  /// Startet das Abo: lädt alle Playlists + deren Items und setzt die aktive Playlist (falls nicht gesetzt) auf die erste.
+  Future<void> start() async {
+    await _playlistsSub?.cancel();
+    _playlistsSub = _repo.streamMusicPlaylistsWithItems().listen((list) {
+      _allPlaylists = list;
+
+      // aktive Playlist ermitteln: gesetzt -> nehmen, sonst erste vorhandene
+      String? id = _activePlaylistId;
+      if (id == null && list.isNotEmpty) {
+        // Wir nutzen hier implizit "die erste" Playlist, damit die UI ohne Änderung Daten erhält
+        id = 'FIRST';
+      }
+
+      if (id != null) {
+        if (id == 'FIRST' && list.isNotEmpty) {
+          _playlist = list.first.playlistContent;
+        } else {
+          final found = list.firstWhere(
+            (p) => p.playlistName == id, // falls du später mit Namen selektierst
+            orElse: () => list.isNotEmpty ? list.first : MusicPlaylist(playlistName: '', playlistContent: []),
+          );
+          _playlist = found.playlistContent;
+        }
+
+        // Falls der aktuelle Song-Index außerhalb der neuen Liste liegt, zurücksetzen
+        if (_currentSongIndex != null && _playlist.isNotEmpty) {
+          if (_currentSongIndex! >= _playlist.length) {
+            _currentSongIndex = 0;
+          }
+        } else if (_playlist.isEmpty) {
+          _currentSongIndex = null;
+          _isPlaying = false;
+          _audioPlayer.stop();
+        }
+      } else {
+        _playlist = [];
+        _currentSongIndex = null;
+      }
+
+      notifyListeners();
+    }, onError: (e, st) {
+      debugPrint('MusicPlaylistProvider stream error: $e');
+    });
   }
 
-  // initially not playing 
+  /// Optional: explizit eine aktive Playlist setzen (z. B. per ID/Name)
+  /// Wenn ihr später Playlists per Document-ID auswählt, ändere hier die Logik passend.
+  void setActivePlaylistByName(String name) {
+    _activePlaylistId = name;
+    // Beim nächsten Stream-Event wird _playlist entsprechend gesetzt.
+    notifyListeners();
+  }
+
+  Future<void> stop() async {
+    await _playlistsSub?.cancel();
+    _playlistsSub = null;
+  }
+
+  // ---------------------------
+  // AUDIOPLAYER (wie gehabt)
+  // ---------------------------
+  final AudioPlayer _audioPlayer = AudioPlayer();
+
+  Duration _currentDuration = Duration.zero;
+  Duration get currentDuration => _currentDuration;
+
+  Duration _totalDuration = Duration.zero;
+  Duration get totalDuration => _totalDuration;
+
+  StreamSubscription<Duration>? _durationSubscription;
+  StreamSubscription<Duration>? _positionSubscription;
+  StreamSubscription<void>? _completionSubscription;
+
   bool _isPlaying = false;
+  bool get isPlaying => _isPlaying;
+
+  int? _currentSongIndex = 0;
+  int? get currentSongIndex => _currentSongIndex;
 
   // play the song
-  void play() async {
-    final String path = playlist[_currentSongIndex!].filePath;
-    await _audioPlayer.stop(); // stop current song
-    await _audioPlayer.play(AssetSource(path)); // play the new song
-    print(path);
+  Future<void> play() async {
+    if (_currentSongIndex == null || _playlist.isEmpty) return;
+
+    final String path = _playlist[_currentSongIndex!].filePath;
+
+    await _audioPlayer.stop();
+    await _audioPlayer.play(AssetSource(path));
     _isPlaying = true;
     notifyListeners();
   }
 
-  //pause current song
-  void pause() async {
+  Future<void> pause() async {
     await _audioPlayer.pause();
     _isPlaying = false;
     notifyListeners();
   }
 
-  // resume playing
-  void resume() async {
+  Future<void> resume() async {
     await _audioPlayer.resume();
     _isPlaying = true;
     notifyListeners();
   }
 
-  // pause of resume
   void pauseOrResume() {
     if (_isPlaying) {
       pause();
@@ -92,65 +158,50 @@ class MusicPlaylistProvider extends ChangeNotifier{
     notifyListeners();
   }
 
-  //seek to specific position in the current song
-  void seek(Duration position) async {
+  Future<void> seek(Duration position) async {
     await _audioPlayer.seek(position);
   }
 
-  // play next song
   void playNextSong() {
-    if (_currentSongIndex != null) {
-      if (_currentSongIndex! < playlist.length -1) {
-        // go to the next song if it is not the last song
-        currentSongIndex =_currentSongIndex! +1;
+    if (_currentSongIndex != null && _playlist.isNotEmpty) {
+      if (_currentSongIndex! < _playlist.length - 1) {
+        currentSongIndex = _currentSongIndex! + 1;
       } else {
-        // if it is the last song, loop back to the first song
         currentSongIndex = 0;
       }
     }
   }
 
-  // play previous song
   void playPreviousSong() async {
-    // if more than 2 seconds have passed, restart the current song
     if (_currentDuration.inSeconds > 2) {
-      seek(Duration.zero);
-    }
-    // it it is within the first 2 seconds of the song, go to the previous song
-    else {
-      if (_currentSongIndex! > 0) {
-        currentSongIndex = _currentSongIndex! -1;
+      await seek(Duration.zero);
+    } else {
+      if (_currentSongIndex != null && _currentSongIndex! > 0) {
+        currentSongIndex = _currentSongIndex! - 1;
       } else {
-        // if it is the first song, loop back to the last song
-        currentSongIndex = playlist.length -1;
+        if (_playlist.isNotEmpty) {
+          currentSongIndex = _playlist.length - 1;
+        }
       }
     }
   }
 
-  /* 
-  
-  G E T T E R S
-  
-   */
-  
-  List<MusicElement> get playlist => DummyData().songs;
-  int? get currentSongIndex => _currentSongIndex;
-  bool get isPlaying => _isPlaying;
-  Duration get totalDuration => _totalDuration;
-  Duration get currentDuration => _currentDuration;
-
-  /* 
-
-    S E T T E R S
-
-  */
-
+  // SETTER: beim Wechsel des Index direkt abspielen (wie bisher)
   set currentSongIndex(int? newIndex) {
     _currentSongIndex = newIndex;
     if (newIndex != null) {
-      play(); // play the song at the new index
+      play();
     }
     notifyListeners();
   }
 
+  @override
+  void dispose() {
+    _durationSubscription?.cancel();
+    _positionSubscription?.cancel();
+    _completionSubscription?.cancel();
+    _playlistsSub?.cancel();
+    _audioPlayer.dispose();
+    super.dispose();
+  }
 }

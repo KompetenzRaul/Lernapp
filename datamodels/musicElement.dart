@@ -14,11 +14,10 @@ class MusicElement {
     required this.filePath,
     required this.artist,
     required this.duration,
-    required this.albumArtImagePath
+    required this.albumArtImagePath,
   }) {
     this.uid = UId.getId();
   }
-
 
   ListTile toListTile() {
     return ListTile(
@@ -38,5 +37,26 @@ class MusicElement {
       iconColor: Color(0xff425159),
       subtitle: Text(this.uid),
     );
+  }
+
+  Map<String, dynamic> toMap() {
+    return {
+      'name': name,
+      'filePath': filePath,
+      'artist': artist,
+      'uid': uid,
+      'duration': duration,
+      'albumArtImagePath': albumArtImagePath,
+    };
+  }
+
+  factory MusicElement.fromMap(Map<String, dynamic> map) {
+    return MusicElement(
+      name: map['name'] ?? '',
+      filePath: map['filePath'] ?? '',
+      artist: map['artist'] ?? '',
+      duration: (map['duration'] as num?)?.toDouble() ?? 0.0,
+      albumArtImagePath: map['albumArtImagePath'] ?? '',
+    )..uid = map['uid'] ?? '';
   }
 }

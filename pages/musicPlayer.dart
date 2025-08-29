@@ -5,119 +5,125 @@ import '../datamodels/musicPlaylistProvider.dart';
 class MusicPlayer extends StatelessWidget {
   const MusicPlayer({super.key, this.onFinished});
 
-  final ValueChanged<double>? onFinished;
+  final ValueChanged<double>?
+  onFinished; // bleibt ungenutzt, da Provider global ist
 
   @override
   Widget build(BuildContext context) {
-    return ChangeNotifierProvider(
-      create: (_) => MusicPlaylistProvider(onFinished: onFinished),
-      child : Consumer<MusicPlaylistProvider>(
+    return Consumer<MusicPlaylistProvider>(
       builder: (context, value, child) {
-
-        // get playlist
+        // Daten holen
         final playlist = value.playlist;
 
-        //get current song index
-        final currentSong = playlist[value.currentSongIndex ?? 0];
+        // Guard: wenn noch keine Daten (erste Firestore-Antwort kommt gleich)
+        if (playlist.isEmpty || value.currentSongIndex == null) {
+          return const Scaffold(
+            body: Center(child: CircularProgressIndicator()),
+          );
+        }
 
-        //return Scaffold UI
+        // Aktuellen Song bestimmen (Index absichern)
+        final safeIndex =
+            (value.currentSongIndex! < playlist.length)
+                ? value.currentSongIndex!
+                : 0;
+        final currentSong = playlist[safeIndex];
+
+        // UI unverändert
         return Scaffold(
           appBar: AppBar(
             centerTitle: true,
-            backgroundColor: Color(0xffb70036),
+            backgroundColor: const Color(0xffb70036),
             shape: const RoundedRectangleBorder(
-                borderRadius: BorderRadius.only(
-                    bottomLeft: Radius.circular(15),
-                    bottomRight: Radius.circular(15)
-                )
+              borderRadius: BorderRadius.only(
+                bottomLeft: Radius.circular(15),
+                bottomRight: Radius.circular(15),
+              ),
             ),
             title: const Text(
               "Viducate",
               style: TextStyle(
-                  color: Colors.white,
-                  fontWeight: FontWeight.normal,
-                  fontSize: 32,
-                  letterSpacing: 0.8
+                color: Colors.white,
+                fontWeight: FontWeight.normal,
+                fontSize: 32,
+                letterSpacing: 0.8,
               ),
             ),
-
           ),
           body: Column(
-              mainAxisAlignment: MainAxisAlignment.spaceAround,
-              children: [
+            mainAxisAlignment: MainAxisAlignment.spaceAround,
+            children: [
+              const SizedBox(height: 50.0),
 
-                SizedBox(height: 50.0,),
+              // album cover image
+              Image.asset(
+                currentSong.albumArtImagePath,
+                height: 300,
+                width: 300,
+                fit: BoxFit.fill,
+              ),
 
-                // album cover image
-                Image.asset(
-                  currentSong.albumArtImagePath,
-                  height: 300,
-                  width: 300,
-                  fit:  BoxFit.fill,
-                ),
+              // song name
+              Text(currentSong.name),
 
-                // song name
-                Text(currentSong.name),
-
-                Row(
-                  mainAxisAlignment: MainAxisAlignment.center,
-                  children: [
-                    //return
-                    IconButton(
-                      onPressed: () {
-                        //go back to last song in playlist
-                        value.playPreviousSong();
-                      },
-                      icon: Icon(
-                          Icons.skip_previous,
-                          color: Color(0xffb70036),
-                          size : 25.0
-                      ),
-                    ),
-                    //pause / resume button
-                    IconButton(
-                      icon: value.isPlaying ? Icon(Icons.pause) : Icon(Icons.play_arrow),
+              Row(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  // previous
+                  IconButton(
+                    onPressed: value.playPreviousSong,
+                    icon: const Icon(
+                      Icons.skip_previous,
                       color: Color(0xffb70036),
-                      onPressed: () {
-                        value.pauseOrResume();
-                      },
+                      size: 25.0,
                     ),
-                    //forward
-                    IconButton(
-                      onPressed: () {
-                        //start next song in playlist
-                        value.playNextSong();
-                      },
-                      icon: Icon(
-                          Icons.skip_next,
-                          color: Color(0xffb70036),
-                          size : 25.0
-                      ),
+                  ),
+                  // pause / resume
+                  IconButton(
+                    icon:
+                        value.isPlaying
+                            ? const Icon(Icons.pause)
+                            : const Icon(Icons.play_arrow),
+                    color: const Color(0xffb70036),
+                    onPressed: value.pauseOrResume,
+                  ),
+                  // next
+                  IconButton(
+                    onPressed: value.playNextSong,
+                    icon: const Icon(
+                      Icons.skip_next,
+                      color: Color(0xffb70036),
+                      size: 25.0,
                     ),
-                  ],
+                  ),
+                ],
+              ),
+
+              // duration slider
+              Slider(
+                min: 0,
+                max: value.totalDuration.inSeconds.toDouble().clamp(
+                  0,
+                  double.infinity,
                 ),
-                // song duration slider
-                Slider(
-                  min: 0,
-                  max: value.totalDuration.inSeconds.toDouble(),
-                  value : value.currentDuration.inSeconds.toDouble(),
-                  activeColor: Color(0xffb70036),
-                  onChanged: (double double) {
-                    // during when the user is sliding around
-                  },
-                  onChangeEnd: (double double) {
-                    //sliding has finished, go to that position in song duration 
-                    value.seek(Duration(seconds: double.toInt()));
-                  },
+                value: value.currentDuration.inSeconds.toDouble().clamp(
+                  0,
+                  value.totalDuration.inSeconds.toDouble(),
                 ),
-                SizedBox(
-                  height: 250.00,
-                )
-              ]
-          )
+                activeColor: const Color(0xffb70036),
+                onChanged: (_) {
+                  // optional: live seeking erst bei onChangeEnd
+                },
+                onChangeEnd: (pos) {
+                  value.seek(Duration(seconds: pos.toInt()));
+                },
+              ),
+
+              const SizedBox(height: 250.0),
+            ],
+          ),
         );
-      }
-    )
+      },
     );
   }
 }
