@@ -1,6 +1,5 @@
 import 'dart:io';
 import 'dart:typed_data';
-
 import 'package:flutter/material.dart';
 import 'package:file_picker/file_picker.dart';
 import 'package:metadata_god/metadata_god.dart';
@@ -8,27 +7,36 @@ import 'package:path/path.dart' as p;
 import 'package:path_provider/path_provider.dart';
 import 'package:permission_handler/permission_handler.dart';
 import 'package:uuid/uuid.dart';
+import 'package:provider/provider.dart';
 
-import '../datamodels/dummyData.dart';
 import '../datamodels/musicPlaylist.dart';
 import '../datamodels/musicElement.dart';
+import '../datamodels/musicPlaylistProvider.dart';
 
 class CreateMusicPlaylistPage extends StatefulWidget {
   const CreateMusicPlaylistPage({super.key});
 
   @override
-  State<CreateMusicPlaylistPage> createState() => _CreateMusicPlaylistPageState();
+  State<CreateMusicPlaylistPage> createState() =>
+      _CreateMusicPlaylistPageState();
 }
 
 class _CreateMusicPlaylistPageState extends State<CreateMusicPlaylistPage> {
-  // Dummy/Beispiel wie bei dir – später durch Provider ersetzen
-  MusicPlaylist _playlist = DummyData.dummyDataMusic;
+  // Lokale Arbeitskopie (für Vorschau in der Liste)
+  MusicPlaylist _playlist = MusicPlaylist(
+    playlistName: 'Neue Playlist',
+    playlistContent: [],
+  );
 
   final _formKey = GlobalKey<FormState>();
   final TextEditingController _playlistNameController = TextEditingController();
   final _uuid = const Uuid();
 
   bool _isPicking = false;
+  bool _saving = false;
+
+  // Firestore-Dokument-ID der angelegten Playlist
+  String? _playlistId;
 
   @override
   void initState() {
@@ -43,28 +51,29 @@ class _CreateMusicPlaylistPageState extends State<CreateMusicPlaylistPage> {
   }
 
   void _submitForm() {
-    setState(() => _playlist.playlistName = _playlistNameController.text.trim());
+    setState(
+      () => _playlist.playlistName = _playlistNameController.text.trim(),
+    );
   }
 
   Future<bool> _ensureStoragePermission() async {
     if (!Platform.isAndroid) return true;
 
-    // Ab Android 13 gibt's READ_MEDIA_*; sonst klassisch READ/WRITE
     var status = await Permission.storage.status;
     if (status.isGranted) return true;
 
-    // Versuch erst normal storage
     status = await Permission.storage.request();
     if (status.isGranted) return true;
 
-    // Optional: Ab Android 13 zusätzlich READ_MEDIA_AUDIO probieren
+    // (Optional) neuere Medienrechte
     final audioStatus = await Permission.audio.request();
     if (audioStatus.isGranted) return true;
 
-    // Wenn immer noch nicht, dem Nutzer Hinweis geben
     if (mounted) {
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Speicherzugriff benötigt, um Dateien auszuwählen.')),
+        const SnackBar(
+          content: Text('Speicherzugriff benötigt, um Dateien auszuwählen.'),
+        ),
       );
     }
     return false;
@@ -84,7 +93,7 @@ class _CreateMusicPlaylistPageState extends State<CreateMusicPlaylistPage> {
       final result = await FilePicker.platform.pickFiles(
         type: FileType.custom,
         allowMultiple: true,
-        allowedExtensions: ['mp3', 'm4a', 'aac', 'wav', 'flac', 'ogg', 'mp4'],
+        allowedExtensions: ['mp3', 'm4a', 'aac', 'wav', 'flac', 'ogg'],
         withData: false,
       );
 
@@ -101,37 +110,44 @@ class _CreateMusicPlaylistPageState extends State<CreateMusicPlaylistPage> {
         if (path == null) continue;
 
         try {
-          // Metadaten mit metadata_god lesen
           final md = await MetadataGod.readMetadata(file: path);
 
-          final String title = (md.title?.trim().isNotEmpty == true)
-              ? md.title!.trim()
-              : p.basenameWithoutExtension(path);
+          final String title =
+              (md.title?.trim().isNotEmpty == true)
+                  ? md.title!.trim()
+                  : p.basenameWithoutExtension(path);
 
-          final String artist = (md.artist?.trim().isNotEmpty == true)
-              ? md.artist!.trim()
-              : 'Unknown Artist';
+          final String artist =
+              (md.artist?.trim().isNotEmpty == true)
+                  ? md.artist!.trim()
+                  : 'Unknown Artist';
 
           final double durationSeconds =
-              (md.durationMs != null && md.durationMs! > 0) ? md.durationMs! / 1000.0 : 0.0;
+              (md.durationMs != null && md.durationMs! > 0)
+                  ? md.durationMs! / 1000.0
+                  : 0.0;
 
-          // Cover (falls vorhanden) als temporäre Datei speichern
+          // Cover (falls vorhanden) temporär speichern
           String albumArtPath = "";
           final Uint8List? coverBytes = md.picture?.data;
           if (coverBytes != null && coverBytes.isNotEmpty) {
-            // Dateiendung best-effort (jpg als Fallback)
-            final ext = (md.picture?.mimeType?.toLowerCase().contains('png') ?? false) ? 'png' : 'jpg';
-            final artFile = File(p.join(
-              tempDir.path,
-              'album_art_${DateTime.now().microsecondsSinceEpoch}.$ext',
-            ));
+            final ext =
+                (md.picture?.mimeType.toLowerCase().contains('png') ?? false)
+                    ? 'png'
+                    : 'jpg';
+            final artFile = File(
+              p.join(
+                tempDir.path,
+                'album_art_${DateTime.now().microsecondsSinceEpoch}.$ext',
+              ),
+            );
             await artFile.writeAsBytes(coverBytes, flush: true);
             albumArtPath = artFile.path;
           }
 
           final item = MusicElement(
             name: title,
-            filePath: path,
+            filePath: path, // echter Gerätepfad
             artist: artist,
             duration: durationSeconds,
             albumArtImagePath: albumArtPath,
@@ -139,7 +155,6 @@ class _CreateMusicPlaylistPageState extends State<CreateMusicPlaylistPage> {
 
           pickedElements.add(item);
         } catch (_) {
-          // Fallback, wenn Metadaten nicht gelesen werden konnten
           final item = MusicElement(
             name: p.basenameWithoutExtension(path),
             filePath: path,
@@ -147,29 +162,85 @@ class _CreateMusicPlaylistPageState extends State<CreateMusicPlaylistPage> {
             duration: 0.0,
             albumArtImagePath: "",
           )..uid = _uuid.v4();
-
           pickedElements.add(item);
         }
       }
 
       if (pickedElements.isNotEmpty) {
-        setState(() {
-          _playlist.playlistContent.addAll(pickedElements);
-        });
-        if (mounted) {
-          ScaffoldMessenger.of(context).showSnackBar(
-            SnackBar(content: Text('${pickedElements.length} Datei(en) hinzugefügt')),
-          );
+        // Sofort lokal anzeigen
+        setState(() => _playlist.playlistContent.addAll(pickedElements));
+
+        if (_playlistId != null) {
+          // Wenn Playlist schon existiert → direkt in Firestore hinzufügen
+          final provider = context.read<MusicPlaylistProvider>();
+          for (final item in pickedElements) {
+            await provider.addToPlaylist(playlistId: _playlistId!, item: item);
+          }
+          if (mounted) {
+            ScaffoldMessenger.of(context).showSnackBar(
+              SnackBar(
+                content: Text(
+                  '${pickedElements.length} Datei(en) hinzugefügt ✅',
+                ),
+              ),
+            );
+          }
+        } else {
+          if (mounted) {
+            ScaffoldMessenger.of(context).showSnackBar(
+              SnackBar(
+                content: Text(
+                  '${pickedElements.length} Datei(en) hinzugefügt (lokal)',
+                ),
+              ),
+            );
+          }
         }
       }
     } catch (e) {
       if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('Fehler beim Auswählen: $e')),
-        );
+        ScaffoldMessenger.of(
+          context,
+        ).showSnackBar(SnackBar(content: Text('Fehler beim Auswählen: $e')));
       }
     } finally {
       if (mounted) setState(() => _isPicking = false);
+    }
+  }
+
+  Future<void> _onCreatePressed() async {
+    if (_playlist.playlistName.trim().isEmpty ||
+        _playlist.playlistContent.isEmpty)
+      return;
+
+    setState(() => _saving = true);
+    try {
+      final provider = context.read<MusicPlaylistProvider>();
+
+      // 1) Playlist in Firestore anlegen (falls noch nicht geschehen)
+      _playlistId ??= await provider.createPlaylist(_playlist.playlistName);
+
+      // 2) Alle lokal vorhandenen Items hochladen
+      for (final item in _playlist.playlistContent) {
+        await provider.addToPlaylist(playlistId: _playlistId!, item: item);
+      }
+
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text('Playlist erstellt & Titel hochgeladen ✅'),
+          ),
+        );
+        Navigator.of(context).pop<MusicPlaylist>(_playlist);
+      }
+    } catch (e) {
+      if (mounted) {
+        ScaffoldMessenger.of(
+          context,
+        ).showSnackBar(SnackBar(content: Text('Fehler beim Erstellen: $e')));
+      }
+    } finally {
+      if (mounted) setState(() => _saving = false);
     }
   }
 
@@ -183,9 +254,7 @@ class _CreateMusicPlaylistPageState extends State<CreateMusicPlaylistPage> {
             key: _formKey,
             child: TextFormField(
               controller: _playlistNameController,
-              decoration: const InputDecoration(
-                labelText: "Name der Playlist",
-              ),
+              decoration: const InputDecoration(labelText: "Name der Playlist"),
               maxLength: 20,
             ),
           ),
@@ -200,21 +269,18 @@ class _CreateMusicPlaylistPageState extends State<CreateMusicPlaylistPage> {
                 Navigator.of(context).pop();
               },
               child: const Text("Speichern"),
-            )
+            ),
           ],
         );
       },
     );
   }
 
-  void _onCreatePressed() {
-    Navigator.of(context).pop<MusicPlaylist>(_playlist);
-  }
-
   @override
   Widget build(BuildContext context) {
     final canCreate =
-        _playlist.playlistContent.isNotEmpty && _playlist.playlistName.trim().isNotEmpty;
+        _playlist.playlistContent.isNotEmpty &&
+        _playlist.playlistName.trim().isNotEmpty;
 
     return Scaffold(
       appBar: AppBar(
@@ -251,53 +317,77 @@ class _CreateMusicPlaylistPageState extends State<CreateMusicPlaylistPage> {
               ),
             ),
             const SizedBox(height: 30),
+
+            // Overflow-sicher (wie bei Video)
             Row(
               mainAxisAlignment: MainAxisAlignment.spaceBetween,
               children: [
-                Row(
-                  children: [
-                    Text(
-                      _playlist.playlistName,
-                      style: const TextStyle(
-                        fontSize: 24,
-                        fontWeight: FontWeight.w600,
-                        letterSpacing: 0.6,
-                        color: Color(0xff425159),
+                Expanded(
+                  child: Row(
+                    children: [
+                      Flexible(
+                        child: Text(
+                          _playlist.playlistName,
+                          maxLines: 1,
+                          overflow: TextOverflow.ellipsis,
+                          style: const TextStyle(
+                            fontSize: 24,
+                            fontWeight: FontWeight.w600,
+                            letterSpacing: 0.6,
+                            color: Color(0xff425159),
+                          ),
+                        ),
+                      ),
+                      const SizedBox(width: 5),
+                      IconButton(
+                        onPressed: () => _showRenameDialog(context),
+                        icon: const Icon(Icons.edit),
+                      ),
+                    ],
+                  ),
+                ),
+                Flexible(
+                  child: Align(
+                    alignment: Alignment.centerRight,
+                    child: FittedBox(
+                      child: FloatingActionButton.extended(
+                        onPressed: _isPicking ? null : _onPickFiles,
+                        label: Text(
+                          _isPicking ? "Lade..." : "Dateien öffnen",
+                          style: const TextStyle(
+                            fontSize: 15,
+                            letterSpacing: 0.5,
+                          ),
+                        ),
+                        icon:
+                            _isPicking
+                                ? const SizedBox(
+                                  width: 24,
+                                  height: 24,
+                                  child: CircularProgressIndicator(
+                                    strokeWidth: 2,
+                                  ),
+                                )
+                                : const Icon(Icons.upload),
+                        foregroundColor: Colors.white,
+                        backgroundColor: const Color(0xffb70036),
+                        elevation: 2.5,
                       ),
                     ),
-                    const SizedBox(width: 5),
-                    IconButton(
-                      onPressed: () => _showRenameDialog(context),
-                      icon: const Icon(Icons.edit),
-                    ),
-                  ],
-                ),
-                FloatingActionButton.extended(
-                  onPressed: _isPicking ? null : _onPickFiles,
-                  extendedIconLabelSpacing: 10,
-                  extendedPadding: const EdgeInsets.symmetric(horizontal: 20),
-                  label: Text(
-                    _isPicking ? "Lade..." : "Dateien öffnen",
-                    style: const TextStyle(fontSize: 15, letterSpacing: 0.5),
                   ),
-                  icon: _isPicking
-                      ? const SizedBox(
-                          width: 24, height: 24, child: CircularProgressIndicator(strokeWidth: 2))
-                      : const Icon(Icons.upload),
-                  foregroundColor: Colors.white,
-                  backgroundColor: const Color(0xffb70036),
-                  elevation: 2.5,
                 ),
               ],
             ),
+
             const SizedBox(height: 20),
             Expanded(
               child: Container(
                 color: Colors.white,
                 child: ListView.separated(
                   itemCount: _playlist.playlistContent.length,
-                  separatorBuilder: (BuildContext context, int index) =>
-                      const Divider(color: Color(0xff425159)),
+                  separatorBuilder:
+                      (BuildContext context, int index) =>
+                          const Divider(color: Color(0xff425159)),
                   itemBuilder: (BuildContext context, int index) {
                     final el = _playlist.playlistContent[index];
                     return GestureDetector(
@@ -305,22 +395,30 @@ class _CreateMusicPlaylistPageState extends State<CreateMusicPlaylistPage> {
                       onLongPress: () {
                         showDialog(
                           context: context,
-                          builder: (_) => AlertDialog(
-                            title: const Text('Titel entfernen?'),
-                            content: Text('„${el.name}“ aus der Playlist löschen?'),
-                            actions: [
-                              TextButton(
-                                  onPressed: () => Navigator.pop(context),
-                                  child: const Text('Abbrechen')),
-                              FilledButton(
-                                onPressed: () {
-                                  setState(() => _playlist.playlistContent.removeAt(index));
-                                  Navigator.pop(context);
-                                },
-                                child: const Text('Löschen'),
+                          builder:
+                              (_) => AlertDialog(
+                                title: const Text('Titel entfernen?'),
+                                content: Text(
+                                  '„${el.name}“ aus der Playlist löschen?',
+                                ),
+                                actions: [
+                                  TextButton(
+                                    onPressed: () => Navigator.pop(context),
+                                    child: const Text('Abbrechen'),
+                                  ),
+                                  FilledButton(
+                                    onPressed: () {
+                                      setState(
+                                        () => _playlist.playlistContent
+                                            .removeAt(index),
+                                      );
+                                      Navigator.pop(context);
+                                      // Firestore-Remove optional: siehe Hinweis unten
+                                    },
+                                    child: const Text('Löschen'),
+                                  ),
+                                ],
                               ),
-                            ],
-                          ),
                         );
                       },
                     );
@@ -328,13 +426,16 @@ class _CreateMusicPlaylistPageState extends State<CreateMusicPlaylistPage> {
                 ),
               ),
             ),
+
             const SizedBox(height: 20),
             Center(
               child: FloatingActionButton.extended(
-                onPressed: canCreate ? _onCreatePressed : null,
+                onPressed: (_saving || !canCreate) ? null : _onCreatePressed,
                 extendedPadding: const EdgeInsets.symmetric(horizontal: 120),
-                label: const Text("Erstellen",
-                    style: TextStyle(fontSize: 15, letterSpacing: 0.5)),
+                label: Text(
+                  _saving ? "Erstelle..." : "Erstellen",
+                  style: const TextStyle(fontSize: 15, letterSpacing: 0.5),
+                ),
                 icon: const Icon(Icons.check),
                 foregroundColor: Colors.white,
                 backgroundColor: const Color(0xffb70036),

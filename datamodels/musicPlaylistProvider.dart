@@ -13,11 +13,15 @@ import '../repository/firestore_repository.dart';
 class MusicPlaylistProvider extends ChangeNotifier {
   MusicPlaylistProvider(this._repo, {this.onFinished}) {
     // Audio-Events abonnieren (wie zuvor)
-    _durationSubscription = _audioPlayer.onDurationChanged.listen((newDuration) {
+    _durationSubscription = _audioPlayer.onDurationChanged.listen((
+      newDuration,
+    ) {
       _totalDuration = newDuration;
       notifyListeners();
     });
-    _positionSubscription = _audioPlayer.onPositionChanged.listen((newPosition) {
+    _positionSubscription = _audioPlayer.onPositionChanged.listen((
+      newPosition,
+    ) {
       _currentDuration = newPosition;
       notifyListeners();
     });
@@ -30,6 +34,31 @@ class MusicPlaylistProvider extends ChangeNotifier {
 
   final FirestoreRepository _repo;
   final ValueChanged<double>? onFinished;
+
+  // ---- CRUD-API für CreateMusicPlaylistPage ----
+  Future<String> createPlaylist(String name) async {
+    final id = await _repo.createMusicPlaylist(name);
+    return id;
+  }
+
+  Future<String> addToPlaylist({
+    required String playlistId,
+    required MusicElement item,
+    int? order,
+  }) {
+    return _repo.addMusicItem(playlistId, item, order: order);
+  }
+
+  Future<void> removeFromPlaylist({
+    required String playlistId,
+    required String itemId,
+  }) {
+    return _repo.removeMusicItem(playlistId, itemId);
+  }
+
+  Future<void> deletePlaylist(String playlistId) {
+    return _repo.deleteMusicPlaylist(playlistId);
+  }
 
   // ---------------------------
   // Firestore-Streams / State
@@ -48,46 +77,57 @@ class MusicPlaylistProvider extends ChangeNotifier {
   /// Startet das Abo: lädt alle Playlists + deren Items und setzt die aktive Playlist (falls nicht gesetzt) auf die erste.
   Future<void> start() async {
     await _playlistsSub?.cancel();
-    _playlistsSub = _repo.streamMusicPlaylistsWithItems().listen((list) {
-      _allPlaylists = list;
+    _playlistsSub = _repo.streamMusicPlaylistsWithItems().listen(
+      (list) {
+        _allPlaylists = list;
 
-      // aktive Playlist ermitteln: gesetzt -> nehmen, sonst erste vorhandene
-      String? id = _activePlaylistId;
-      if (id == null && list.isNotEmpty) {
-        // Wir nutzen hier implizit "die erste" Playlist, damit die UI ohne Änderung Daten erhält
-        id = 'FIRST';
-      }
-
-      if (id != null) {
-        if (id == 'FIRST' && list.isNotEmpty) {
-          _playlist = list.first.playlistContent;
-        } else {
-          final found = list.firstWhere(
-            (p) => p.playlistName == id, // falls du später mit Namen selektierst
-            orElse: () => list.isNotEmpty ? list.first : MusicPlaylist(playlistName: '', playlistContent: []),
-          );
-          _playlist = found.playlistContent;
+        // aktive Playlist ermitteln: gesetzt -> nehmen, sonst erste vorhandene
+        String? id = _activePlaylistId;
+        if (id == null && list.isNotEmpty) {
+          // Wir nutzen hier implizit "die erste" Playlist, damit die UI ohne Änderung Daten erhält
+          id = 'FIRST';
         }
 
-        // Falls der aktuelle Song-Index außerhalb der neuen Liste liegt, zurücksetzen
-        if (_currentSongIndex != null && _playlist.isNotEmpty) {
-          if (_currentSongIndex! >= _playlist.length) {
-            _currentSongIndex = 0;
+        if (id != null) {
+          if (id == 'FIRST' && list.isNotEmpty) {
+            _playlist = list.first.playlistContent;
+          } else {
+            final found = list.firstWhere(
+              (p) =>
+                  p.playlistName == id, // falls du später mit Namen selektierst
+              orElse:
+                  () =>
+                      list.isNotEmpty
+                          ? list.first
+                          : MusicPlaylist(
+                            playlistName: '',
+                            playlistContent: [],
+                          ),
+            );
+            _playlist = found.playlistContent;
           }
-        } else if (_playlist.isEmpty) {
-          _currentSongIndex = null;
-          _isPlaying = false;
-          _audioPlayer.stop();
-        }
-      } else {
-        _playlist = [];
-        _currentSongIndex = null;
-      }
 
-      notifyListeners();
-    }, onError: (e, st) {
-      debugPrint('MusicPlaylistProvider stream error: $e');
-    });
+          // Falls der aktuelle Song-Index außerhalb der neuen Liste liegt, zurücksetzen
+          if (_currentSongIndex != null && _playlist.isNotEmpty) {
+            if (_currentSongIndex! >= _playlist.length) {
+              _currentSongIndex = 0;
+            }
+          } else if (_playlist.isEmpty) {
+            _currentSongIndex = null;
+            _isPlaying = false;
+            _audioPlayer.stop();
+          }
+        } else {
+          _playlist = [];
+          _currentSongIndex = null;
+        }
+
+        notifyListeners();
+      },
+      onError: (e, st) {
+        debugPrint('MusicPlaylistProvider stream error: $e');
+      },
+    );
   }
 
   /// Optional: explizit eine aktive Playlist setzen (z. B. per ID/Name)

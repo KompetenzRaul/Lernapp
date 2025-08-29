@@ -12,17 +12,18 @@ import 'pages/videoPlayer.dart';
 
 import './repository/firestore_repository.dart';
 import './datamodels/musicPlaylistProvider.dart';
+import './datamodels/videoPlaylistProvider.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
 
-  // 1) WICHTIG: Firebase zuerst initialisieren
+  // 1) Firebase zuerst
   await Firebase.initializeApp();
 
-  // 2) Danach App starten
+  // 2) App starten
   runApp(const MyApp());
 
-  // 3) MetadataGod später/lazy initialisieren (war die Ursache für Hänger)
+  // 3) MetadataGod später/lazy
   _initMetadata();
 }
 
@@ -50,7 +51,14 @@ class MyApp extends StatelessWidget {
         ChangeNotifierProvider<MusicPlaylistProvider>(
           create: (_) {
             final p = MusicPlaylistProvider(repo);
-            p.start(); // Jetzt ist Firebase bereits initialisiert
+            p.start();
+            return p;
+          },
+        ),
+        ChangeNotifierProvider<VideoPlaylistProvider>(
+          create: (_) {
+            final p = VideoPlaylistProvider(repo);
+            p.start();
             return p;
           },
         ),
@@ -61,8 +69,12 @@ class MyApp extends StatelessWidget {
           '/': (context) => const Homepage(),
           '/createMusicPlaylist': (context) => const CreateMusicPlaylistPage(),
           '/createVideoPlaylist': (context) => const CreateVideoPlaylistPage(),
-          '/videoPlayer': (context) => const Videoplayer(videoPath: "assets/Ellipse.mp4"),
           '/musicPlayer': (context) => const MusicPlayer(),
+          // Für /videoPlayer holen wir den Pfad aus arguments:
+          '/videoPlayer': (context) {
+            final path = ModalRoute.of(context)!.settings.arguments as String;
+            return Videoplayer(videoPath: path);
+          },
         },
         initialRoute: '/',
         theme: ThemeData(
