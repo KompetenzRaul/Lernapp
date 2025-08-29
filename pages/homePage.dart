@@ -1,6 +1,10 @@
 import 'package:flutter/material.dart';
 import 'package:smooth_page_indicator/smooth_page_indicator.dart';
 import 'playerController.dart';
+import 'package:provider/provider.dart';
+
+import '../datamodels/musicPlaylistProvider.dart';
+import '../datamodels/videoPlaylistProvider.dart';
 
 class Homepage extends StatefulWidget {
   const Homepage({super.key});
@@ -10,7 +14,6 @@ class Homepage extends StatefulWidget {
 }
 
 class _HomepageState extends State<Homepage> {
-
   String? _selectedVideoPlaylist;
   String? _selectedMusicPlaylist;
 
@@ -20,13 +23,14 @@ class _HomepageState extends State<Homepage> {
   final PageController _musicController = PageController(
     viewportFraction: 0.65,
   );
+
   double _sliderValue = 0.5;
 
   Widget _buildPlaylistCard(String name, {required bool isVideo}) {
     final bool isSelected =
-    isVideo
-        ? _selectedVideoPlaylist == name
-        : _selectedMusicPlaylist == name;
+        isVideo
+            ? _selectedVideoPlaylist == name
+            : _selectedMusicPlaylist == name;
 
     return Container(
       width: 100,
@@ -35,7 +39,7 @@ class _HomepageState extends State<Homepage> {
       decoration: BoxDecoration(
         color: Colors.white,
         borderRadius: BorderRadius.circular(14),
-        boxShadow: [
+        boxShadow: const [
           BoxShadow(color: Colors.black12, blurRadius: 4, offset: Offset(2, 2)),
         ],
       ),
@@ -44,7 +48,7 @@ class _HomepageState extends State<Homepage> {
         children: [
           Text(name, textAlign: TextAlign.center),
           const SizedBox(height: 8),
-          Container(
+          SizedBox(
             width: double.infinity,
             child: OutlinedButton.icon(
               onPressed: () {
@@ -54,12 +58,19 @@ class _HomepageState extends State<Homepage> {
                       _selectedVideoPlaylist = null;
                     } else {
                       _selectedVideoPlaylist = name;
+                      // aktive Playlist im Provider setzen
+                      context
+                          .read<VideoPlaylistProvider>()
+                          .setActivePlaylistByName(name);
                     }
                   } else {
                     if (_selectedMusicPlaylist == name) {
                       _selectedMusicPlaylist = null;
                     } else {
                       _selectedMusicPlaylist = name;
+                      context
+                          .read<MusicPlaylistProvider>()
+                          .setActivePlaylistByName(name);
                     }
                   }
                 });
@@ -67,24 +78,24 @@ class _HomepageState extends State<Homepage> {
               icon: Icon(
                 isSelected ? Icons.check : Icons.add,
                 size: 16,
-                color: isSelected ? Colors.white : Color(0xff425159),
+                color: isSelected ? Colors.white : const Color(0xff425159),
               ),
               label: Text(
                 isSelected ? "Gewählt" : "Auswählen",
                 style: TextStyle(
                   fontSize: 14,
                   fontWeight: FontWeight.w500,
-                  color: isSelected ? Colors.white : Color(0xff425159),
+                  color: isSelected ? Colors.white : const Color(0xff425159),
                 ),
               ),
               style: OutlinedButton.styleFrom(
                 backgroundColor:
-                isSelected ? const Color(0xffb70036) : Colors.transparent,
+                    isSelected ? const Color(0xffb70036) : Colors.transparent,
                 side: BorderSide(
                   color:
-                  isSelected
-                      ? const Color(0xffb70036)
-                      : const Color(0xff425159),
+                      isSelected
+                          ? const Color(0xffb70036)
+                          : const Color(0xff425159),
                   width: 1,
                 ),
                 shape: RoundedRectangleBorder(
@@ -104,32 +115,33 @@ class _HomepageState extends State<Homepage> {
 
   @override
   Widget build(BuildContext context) {
+    final videoProvider = context.watch<VideoPlaylistProvider>();
+    final musicProvider = context.watch<MusicPlaylistProvider>();
+
+    final videoPlaylists = videoProvider.allPlaylists;
+    final musicPlaylists = musicProvider.allPlaylists;
 
     return Scaffold(
       drawer: Drawer(
         child: ListView(
           padding: EdgeInsets.zero,
           children: [
-            DrawerHeader(
-              decoration: BoxDecoration(color: const Color(0xffb70036)),
+            const DrawerHeader(
+              decoration: BoxDecoration(color: Color(0xffb70036)),
               child: Text(
                 'Menü',
                 style: TextStyle(color: Colors.white, fontSize: 24),
               ),
             ),
             ListTile(
-              leading: Icon(Icons.settings),
-              title: Text('Einstellungen'),
-              onTap: () {
-                Navigator.pop(context);
-              },
+              leading: const Icon(Icons.settings),
+              title: const Text('Einstellungen'),
+              onTap: () => Navigator.pop(context),
             ),
             ListTile(
-              leading: Icon(Icons.info),
-              title: Text('Info'),
-              onTap: () {
-                Navigator.pop(context);
-              },
+              leading: const Icon(Icons.info),
+              title: const Text('Info'),
+              onTap: () => Navigator.pop(context),
             ),
           ],
         ),
@@ -137,10 +149,10 @@ class _HomepageState extends State<Homepage> {
       appBar: AppBar(
         centerTitle: true,
         shape: const RoundedRectangleBorder(
-            borderRadius: BorderRadius.only(
-                bottomLeft: Radius.circular(15),
-                bottomRight: Radius.circular(15)
-            )
+          borderRadius: BorderRadius.only(
+            bottomLeft: Radius.circular(15),
+            bottomRight: Radius.circular(15),
+          ),
         ),
         title: const Text(
           "Viducate",
@@ -148,35 +160,35 @@ class _HomepageState extends State<Homepage> {
             color: Colors.white,
             fontWeight: FontWeight.normal,
             fontSize: 32,
-            letterSpacing: 0.8
+            letterSpacing: 0.8,
+          ),
         ),
-      ), backgroundColor: Color(0xffb70036),),
+        backgroundColor: const Color(0xffb70036),
+      ),
       body: SingleChildScrollView(
         padding: const EdgeInsets.all(16.0),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            _buildSectionTitle("Video Playlists", "/createVideoPlaylist"), //ich hab da noch den Route String übergeben, weil wir ja auf zwei unterschiedliche Seiten wollen.
-            _buildPlaylistSection(                                         //einmal auf die VideoPlaylist-Seite und einmal auf die MusikPlaylist-Seite... - Till
+            _buildSectionTitle("Video Playlists", "/createVideoPlaylist"),
+            _buildPlaylistSection(
               _videoController,
-              6,
-              "Astronomie",
+              videoPlaylists,
               isVideo: true,
               height: 160,
             ),
             const SizedBox(height: 16),
-            _buildSectionTitle("Music Playlists", "/createMusicPlaylist"), //hier das gleiche
+            _buildSectionTitle("Music Playlists", "/createMusicPlaylist"),
             _buildPlaylistSection(
               _musicController,
-              2,
-              "Üppings Lieblings Musik",
+              musicPlaylists,
               isVideo: false,
               height: 160,
             ),
             const SizedBox(height: 16),
-            Text(
+            const Text(
               "Verhältnis Video/Musik",
-              style: const TextStyle(fontSize: 20, fontWeight: FontWeight.bold),
+              style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold),
             ),
             const SizedBox(height: 8),
             Slider(
@@ -187,11 +199,7 @@ class _HomepageState extends State<Homepage> {
               activeColor: const Color(0xffb70036),
               inactiveColor: Colors.grey.shade300,
               label: "${(_sliderValue * 100).round()}% Video",
-              onChanged: (value) {
-                setState(() {
-                  _sliderValue = value;
-                });
-              },
+              onChanged: (value) => setState(() => _sliderValue = value),
             ),
             Row(
               mainAxisAlignment: MainAxisAlignment.spaceBetween,
@@ -206,7 +214,9 @@ class _HomepageState extends State<Homepage> {
                 onPressed: () {
                   Navigator.of(context).push(
                     MaterialPageRoute(
-                      builder: (context) => PlayerController(mediaRatio: _sliderValue),
+                      builder:
+                          (context) =>
+                              PlayerController(mediaRatio: _sliderValue),
                     ),
                   );
                 },
@@ -254,9 +264,7 @@ class _HomepageState extends State<Homepage> {
           child: IconButton(
             padding: EdgeInsets.zero,
             iconSize: 25,
-            onPressed: () {
-              Navigator.of(context).pushNamed(routeToPushTo);
-            },
+            onPressed: () => Navigator.of(context).pushNamed(routeToPushTo),
             icon: const Icon(Icons.add, color: Colors.white),
           ),
         ),
@@ -265,12 +273,18 @@ class _HomepageState extends State<Homepage> {
   }
 
   Widget _buildPlaylistSection(
-      PageController controller,
-      int itemCount,
-      String title, {
-        required bool isVideo,
-        required double height,
-      }) {
+    PageController controller,
+    List playlists, {
+    required bool isVideo,
+    required double height,
+  }) {
+    if (playlists.isEmpty) {
+      return const Padding(
+        padding: EdgeInsets.all(16.0),
+        child: Text("Noch keine Playlists vorhanden."),
+      );
+    }
+
     return Column(
       children: [
         Container(
@@ -282,15 +296,16 @@ class _HomepageState extends State<Homepage> {
           ),
           child: PageView.builder(
             controller: controller,
-            itemCount: itemCount,
+            itemCount: playlists.length,
             itemBuilder: (context, index) {
+              final playlist = playlists[index];
               return Padding(
                 padding: const EdgeInsets.symmetric(
                   horizontal: 12.0,
                   vertical: 12.0,
                 ),
                 child: _buildPlaylistCard(
-                  "$title ${index + 1}",
+                  playlist.playlistName,
                   isVideo: isVideo,
                 ),
               );
@@ -300,7 +315,7 @@ class _HomepageState extends State<Homepage> {
         Center(
           child: SmoothPageIndicator(
             controller: controller,
-            count: itemCount,
+            count: playlists.length,
             effect: WormEffect(
               dotHeight: 10,
               dotWidth: 10,
@@ -313,4 +328,3 @@ class _HomepageState extends State<Homepage> {
     );
   }
 }
-

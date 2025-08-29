@@ -2,14 +2,15 @@ import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:file_picker/file_picker.dart';
 import 'package:video_player/video_player.dart';
-
 import 'package:path/path.dart' as p;
-import 'package:path_provider/path_provider.dart'; // optional, falls wir später Thumbnails cachen wollen
+import 'package:path_provider/path_provider.dart'; // optional
 import 'package:permission_handler/permission_handler.dart';
+import 'package:provider/provider.dart';
 
 import '../datamodels/videoPlaylist.dart';
 import '../datamodels/videoElement.dart';
 import '../repository/firestore_repository.dart';
+import '../datamodels/videoPlaylistProvider.dart';
 
 class CreateVideoPlaylistPage extends StatefulWidget {
   const CreateVideoPlaylistPage({super.key});
@@ -54,7 +55,6 @@ class _CreateVideoPlaylistPageState extends State<CreateVideoPlaylistPage> {
   }
 
   Future<bool> _ensureStoragePermission() async {
-    // Für Android Storage-Rechte anfragen (iOS braucht’s i. d. R. nicht)
     if (!Platform.isAndroid) return true;
 
     var status = await Permission.storage.status;
@@ -86,12 +86,8 @@ class _CreateVideoPlaylistPageState extends State<CreateVideoPlaylistPage> {
 
       final result = await FilePicker.platform.pickFiles(
         type: FileType.custom,
-        allowedExtensions: [
-          'mp4',
-          'mkv',
-          'mov',
-        ], // mp4 reicht meist; mkv/mov optional
-        allowMultiple: true, // mehrere auf einmal möglich (UI bleibt gleich)
+        allowedExtensions: ['mp4', 'mkv', 'mov'],
+        allowMultiple: true,
       );
 
       if (result == null || result.files.isEmpty) {
@@ -122,7 +118,7 @@ class _CreateVideoPlaylistPageState extends State<CreateVideoPlaylistPage> {
         // Sofort in UI-Liste
         setState(() => _playlist.playlistContent.add(item));
 
-        // Falls Playlist bereits in Firestore existiert → direkt hochladen
+        // Falls Playlist bereits existiert → direkt hochladen
         if (_playlistId != null) {
           await repo.addVideoItem(_playlistId!, item);
           addedCount++;
@@ -153,38 +149,6 @@ class _CreateVideoPlaylistPageState extends State<CreateVideoPlaylistPage> {
     } finally {
       if (mounted) setState(() => _isPicking = false);
     }
-  }
-
-  void _showRenameDialog(BuildContext context) {
-    showDialog(
-      context: context,
-      builder: (BuildContext context) {
-        return AlertDialog(
-          title: const Center(child: Text("Bearbeiten")),
-          content: Form(
-            key: _formKey,
-            child: TextFormField(
-              controller: _playlistNameController,
-              decoration: const InputDecoration(labelText: "Name"),
-              maxLength: 20,
-            ),
-          ),
-          actions: [
-            OutlinedButton(
-              onPressed: () => Navigator.of(context).pop(),
-              child: const Text("Abbrechen"),
-            ),
-            FilledButton(
-              onPressed: () {
-                submitForm();
-                Navigator.of(context).pop();
-              },
-              child: const Text("Speichern"),
-            ),
-          ],
-        );
-      },
-    );
   }
 
   Future<void> _onCreatePressed() async {
@@ -223,11 +187,49 @@ class _CreateVideoPlaylistPageState extends State<CreateVideoPlaylistPage> {
     }
   }
 
+  Future<void> _showRenameDialog(BuildContext context) async {
+    final TextEditingController controller =
+        TextEditingController(text: _playlist.playlistName);
+
+    await showDialog(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: const Text('Playlist umbenennen'),
+        content: TextField(
+          controller: controller,
+          autofocus: true,
+          decoration: const InputDecoration(
+            labelText: 'Neuer Name',
+          ),
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.of(context).pop(),
+            child: const Text('Abbrechen'),
+          ),
+          ElevatedButton(
+            onPressed: () {
+              setState(() {
+                _playlist.playlistName = controller.text.trim();
+                _playlistNameController.text = controller.text.trim();
+              });
+              Navigator.of(context).pop();
+            },
+            child: const Text('Speichern'),
+          ),
+        ],
+      ),
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     final canCreate =
         _playlist.playlistContent.isNotEmpty &&
         _playlist.playlistName.trim().isNotEmpty;
+
+    // EXISTIERENDE VIDEO-PLAYLISTS (aus Provider)
+    final existing = context.watch<VideoPlaylistProvider>().allPlaylists;
 
     return Scaffold(
       appBar: AppBar(
@@ -264,7 +266,47 @@ class _CreateVideoPlaylistPageState extends State<CreateVideoPlaylistPage> {
                 color: Color(0xff425159),
               ),
             ),
-            const SizedBox(height: 30),
+            const SizedBox(height: 12),
+
+            // Vorhandene Playlists (kompakter Block, UI bleibt clean)
+            if (existing.isNotEmpty) ...[
+              const Text(
+                "Vorhandene Playlists",
+                style: TextStyle(fontSize: 16, fontWeight: FontWeight.w600),
+              ),
+              const SizedBox(height: 8),
+              SizedBox(
+                height: 120,
+                child: ListView.separated(
+                  scrollDirection: Axis.horizontal,
+                  itemCount: existing.length,
+                  separatorBuilder: (_, __) => const SizedBox(width: 10),
+                  itemBuilder: (_, i) {
+                    final pl = existing[i];
+                    return Container(
+                      width: 160,
+                      padding: const EdgeInsets.all(10),
+                      decoration: BoxDecoration(
+                        color: Colors.white,
+                        borderRadius: BorderRadius.circular(12),
+                        boxShadow: const [
+                          BoxShadow(color: Colors.black12, blurRadius: 3),
+                        ],
+                      ),
+                      child: Center(
+                        child: Text(
+                          pl.playlistName,
+                          textAlign: TextAlign.center,
+                          maxLines: 2,
+                          overflow: TextOverflow.ellipsis,
+                        ),
+                      ),
+                    );
+                  },
+                ),
+              ),
+              const SizedBox(height: 18),
+            ],
 
             Row(
               mainAxisAlignment: MainAxisAlignment.spaceBetween,
@@ -301,10 +343,7 @@ class _CreateVideoPlaylistPageState extends State<CreateVideoPlaylistPage> {
                     alignment: Alignment.centerRight,
                     child: FittedBox(
                       child: FloatingActionButton.extended(
-                        onPressed:
-                            _isPicking
-                                ? null
-                                : _pickVideo, // bzw. _onPickFiles bei Musik
+                        onPressed: _isPicking ? null : _pickVideo,
                         label: Text(
                           _isPicking ? "Lade..." : "Dateien öffnen",
                           style: const TextStyle(
@@ -332,7 +371,7 @@ class _CreateVideoPlaylistPageState extends State<CreateVideoPlaylistPage> {
               ],
             ),
 
-            SizedBox(height: 10),
+            const SizedBox(height: 10),
 
             Expanded(
               child: Container(
