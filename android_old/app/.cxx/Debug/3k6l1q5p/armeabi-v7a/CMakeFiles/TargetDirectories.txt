@@ -1,0 +1,2 @@
+C:/Users/raulk/Viducate/Lernapp/android/app/.cxx/Debug/3k6l1q5p/armeabi-v7a/CMakeFiles/edit_cache.dir
+C:/Users/raulk/Viducate/Lernapp/android/app/.cxx/Debug/3k6l1q5p/armeabi-v7a/CMakeFiles/rebuild_cache.dir
