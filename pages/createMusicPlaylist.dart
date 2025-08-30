@@ -94,19 +94,73 @@ class _CreateMusicPlaylistPageState extends State<CreateMusicPlaylistPage> {
         return;
       }
 
-      final tempDir = await getTemporaryDirectory();
+  final tempDir = await getTemporaryDirectory();
+      final docsDir = await getApplicationDocumentsDirectory();
+      final audioTargetDir = Directory(p.join(docsDir.path, 'media', 'audio'));
+      if (!await audioTargetDir.exists()) {
+        await audioTargetDir.create(recursive: true);
+      }
+      String _uniqueName(String base) {
+        final ts = DateTime.now().microsecondsSinceEpoch;
+        // keep extension
+        final name = p.basenameWithoutExtension(base);
+        final ext = p.extension(base);
+        // simple sanitize
+        final safeName = name.replaceAll(RegExp(r'[^A-Za-z0-9._-]+'), '_');
+        return '${safeName}_$ts$ext';
+      }
       final List<MusicElement> pickedElements = [];
+
+      // Helper to normalize picked file paths (avoid mistaken 'assets/' prefix)
+      String _sanitizePickedPath(String original) {
+        String p0 = original.replaceAll('\\', '/');
+        if (p0.startsWith('assets/')) {
+          p0 = p0.replaceFirst(RegExp(r'^assets/+'), '');
+        }
+        // If it still starts with double slash after stripping, collapse it
+        p0 = p0.replaceFirst(RegExp(r'^/+'), '/');
+        return p0;
+      }
 
       for (final f in result.files) {
         final path = f.path;
         if (path == null) continue;
+        final safePath = _sanitizePickedPath(path);
+        // Persist only when needed to avoid storage doubling.
+        // If the path is in our temp/cache, move it into app storage; otherwise keep original.
+        String storedPath = safePath;
+        try {
+          final src = File(safePath);
+          if (await src.exists()) {
+            final isFromTemp = safePath.replaceAll('\\', '/').startsWith(
+              tempDir.path.replaceAll('\\', '/'),
+            );
+            if (isFromTemp) {
+              final dest = p.join(audioTargetDir.path, _uniqueName(p.basename(safePath)));
+              try {
+                // Prefer move (rename) to avoid double usage
+                final moved = await src.rename(dest);
+                storedPath = moved.path;
+              } catch (_) {
+                // Cross-volume move may fail; fallback to copy then delete original temp file
+                await src.copy(dest);
+                storedPath = dest;
+                try { await src.delete(); } catch (_) {}
+              }
+            } else {
+              storedPath = safePath; // keep reference to original file
+            }
+          }
+        } catch (e) {
+          debugPrint('Audio persist/move failed: $e');
+        }
 
         try {
-          final md = await MetadataGod.readMetadata(file: path);
+          final md = await MetadataGod.readMetadata(file: storedPath);
 
           final String title = (md.title?.trim().isNotEmpty == true)
               ? md.title!.trim()
-              : p.basenameWithoutExtension(path);
+              : p.basenameWithoutExtension(storedPath);
 
           final String artist = (md.artist?.trim().isNotEmpty == true)
               ? md.artist!.trim()
@@ -119,7 +173,8 @@ class _CreateMusicPlaylistPageState extends State<CreateMusicPlaylistPage> {
           String albumArtPath = "";
           final Uint8List? coverBytes = md.picture?.data;
           if (coverBytes != null && coverBytes.isNotEmpty) {
-            final ext = (md.picture?.mimeType?.toLowerCase().contains('png') ?? false) ? 'png' : 'jpg';
+            final mime = (md.picture!.mimeType.toLowerCase());
+            final ext = mime.contains('png') ? 'png' : 'jpg';
             final artFile = File(
               p.join(tempDir.path, 'album_art_${DateTime.now().microsecondsSinceEpoch}.$ext'),
             );
@@ -129,7 +184,7 @@ class _CreateMusicPlaylistPageState extends State<CreateMusicPlaylistPage> {
 
           final item = MusicElement(
             name: title,
-            filePath: path, // echter Gerätepfad
+            filePath: storedPath, // persistent Gerätepfad
             artist: artist,
             duration: durationSeconds,
             albumArtImagePath: albumArtPath,
@@ -138,8 +193,8 @@ class _CreateMusicPlaylistPageState extends State<CreateMusicPlaylistPage> {
           pickedElements.add(item);
         } catch (_) {
           final item = MusicElement(
-            name: p.basenameWithoutExtension(path),
-            filePath: path,
+            name: p.basenameWithoutExtension(storedPath),
+            filePath: storedPath,
             artist: 'Unknown Artist',
             duration: 0.0,
             albumArtImagePath: "",

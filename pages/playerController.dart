@@ -1,7 +1,9 @@
 import 'package:flutter/material.dart';
+import 'package:provider/provider.dart';
 
 import 'musicPlayer.dart';
 import 'videoPlayer.dart';
+import '../datamodels/videoPlaylistProvider.dart';
 
 class PlayerController extends StatefulWidget {
   final double mediaRatio;
@@ -18,27 +20,42 @@ class _PlayerControllerState extends State<PlayerController> {
 
   @override
   Widget build(BuildContext context) {
+    final total = _videoTime + _audioTime;
+    final currentRatio = total > 0 ? _videoTime / total : 0.0;
     print("Media Ratio: ${widget.mediaRatio}");
-    print("current ratio: ${_videoTime/(_videoTime+_audioTime)}");
+    print("current ratio: $currentRatio");
     print("Video Time: $_videoTime, Audio Time: $_audioTime");
-    dynamic randomChoice() {
-      if (_videoTime/(_videoTime+_audioTime) < widget.mediaRatio) {
-        return Videoplayer(key: UniqueKey(), videoPath: "assets/Ellipse.mp4", onVideoEnd: onFinishedVideo);
-      } else {
-        return MusicPlayer(key: UniqueKey(), onFinished: onFinishedAudio);
-      }
-      
+
+    final videoProvider = context.watch<VideoPlaylistProvider>();
+    final hasVideo = videoProvider.playlist.isNotEmpty &&
+        videoProvider.currentVideoIndex != null &&
+        videoProvider.currentVideoIndex! < videoProvider.playlist.length;
+    final videoPath = hasVideo
+        ? videoProvider.playlist[videoProvider.currentVideoIndex!].filePath
+        : null;
+
+    if (currentRatio < widget.mediaRatio && videoPath != null && videoPath.isNotEmpty) {
+      return Videoplayer(
+        key: UniqueKey(),
+        videoPath: videoPath,
+        onVideoEnd: (secs) {
+          onFinishedVideo(secs);
+          videoProvider.playNext();
+        },
+      );
     }
-    return randomChoice();
+    return MusicPlayer(key: UniqueKey(), onFinished: onFinishedAudio);
   }
 
     void onFinishedVideo(double timePlayed) {
+      print("Video finished: $timePlayed");
     setState(() {
       _videoTime += timePlayed;
     });
   }
 
   void onFinishedAudio(double timePlayed) {
+    print("Audio finished: $timePlayed");
     setState(() {
       _audioTime += timePlayed;
     });

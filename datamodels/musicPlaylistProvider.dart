@@ -1,4 +1,5 @@
 import 'dart:async';
+import 'dart:io';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:audioplayers/audioplayers.dart';
@@ -11,7 +12,10 @@ import '../datamodels/musicPlaylist.dart';
 import '../repository/firestore_repository.dart';
 
 class MusicPlaylistProvider extends ChangeNotifier {
-  MusicPlaylistProvider(this._repo, {this.onFinished}) {
+  MusicPlaylistProvider(this._repo, {ValueChanged<double>? onFinished}) {
+    _onFinished = onFinished;
+    // Configure player
+    _audioPlayer.setReleaseMode(ReleaseMode.stop);
     // Audio-Events abonnieren (wie zuvor)
     _durationSubscription = _audioPlayer.onDurationChanged.listen((
       newDuration,
@@ -27,13 +31,17 @@ class MusicPlaylistProvider extends ChangeNotifier {
     });
     _completionSubscription = _audioPlayer.onPlayerComplete.listen((_) {
       final played = _totalDuration.inSeconds.toDouble();
-      if (onFinished != null) onFinished!(played);
-      playNextSong();
+      final cb = _onFinished;
+      if (cb != null) cb(played);
     });
   }
 
   final FirestoreRepository _repo;
-  final ValueChanged<double>? onFinished;
+  ValueChanged<double>? _onFinished;
+
+  void setOnFinished(ValueChanged<double>? cb) {
+    _onFinished = cb;
+  }
 
   // ---- CRUD-API für CreateMusicPlaylistPage ----
   Future<String> createPlaylist(String name) async {
@@ -164,15 +172,48 @@ class MusicPlaylistProvider extends ChangeNotifier {
   int? _currentSongIndex = 0;
   int? get currentSongIndex => _currentSongIndex;
 
+  // Track whether a source has been loaded at least once for the current index
+  bool _hasSourceLoaded = false;
+
   // play the song
   Future<void> play() async {
     if (_currentSongIndex == null || _playlist.isEmpty) return;
 
     final String path = _playlist[_currentSongIndex!].filePath;
+    debugPrint('Audio play(): index=$_currentSongIndex path=$path');
 
     await _audioPlayer.stop();
-    await _audioPlayer.play(AssetSource(path));
+  // Use proper source: treat absolute/local paths as device files, not assets.
+  // Also fix cases where a device path was accidentally saved with an 'assets/' prefix.
+    final String fixedPath = _ensureCorrectDevicePath(path);
+    Source src;
+    if (_isLikelyAsset(fixedPath)) {
+      debugPrint('Audio source -> ASSET ${_normalizeAssetPath(fixedPath)}');
+      src = AssetSource(_normalizeAssetPath(fixedPath));
+    } else {
+      final devicePath = _asDevicePath(fixedPath);
+      if (!File(devicePath).existsSync()) {
+        debugPrint('Music file not found: $devicePath');
+        _isPlaying = false;
+        _hasSourceLoaded = false;
+        notifyListeners();
+        return;
+      }
+      debugPrint('Audio source -> FILE $devicePath');
+      src = DeviceFileSource(devicePath);
+    }
+    try {
+      await _audioPlayer.play(src);
+    } catch (e, st) {
+      debugPrint('Audio play() failed: $e');
+      debugPrintStack(stackTrace: st);
+      _isPlaying = false;
+      _hasSourceLoaded = false;
+      notifyListeners();
+      return;
+    }
     _isPlaying = true;
+    _hasSourceLoaded = true;
     notifyListeners();
   }
 
@@ -190,10 +231,18 @@ class MusicPlaylistProvider extends ChangeNotifier {
 
   void pauseOrResume() {
     if (_isPlaying) {
+      debugPrint('Audio pause requested');
       pause();
     } else {
-      resume();
-      currentSongIndex = _currentSongIndex;
+      // If we never loaded a source for the current index, start playing
+      if (!_hasSourceLoaded) {
+        debugPrint('Audio resume button pressed, no source loaded -> play()');
+        play();
+      } else {
+        // Just resume; do not reset the index which would trigger a fresh play()
+        debugPrint('Audio resume requested');
+        resume();
+      }
     }
     notifyListeners();
   }
@@ -243,5 +292,57 @@ class MusicPlaylistProvider extends ChangeNotifier {
     _playlistsSub?.cancel();
     _audioPlayer.dispose();
     super.dispose();
+  }
+
+  // ---------------------------
+  // Helpers
+  // ---------------------------
+  // Heuristic: a path is an asset if it starts with 'assets/' AND the remainder
+  // does not look like an absolute device path (Android/iOS/Windows).
+  bool _isLikelyAsset(String originalPath) {
+    final String p = originalPath.replaceAll('\\', '/');
+    if (!p.startsWith('assets/')) return false;
+    final String rest = p.substring('assets/'.length);
+    if (rest.isEmpty) return true;
+    final String r = rest.startsWith('/') ? rest.substring(1) : rest;
+    final bool looksAndroidAbs = r.startsWith('data/') || r.startsWith('storage/') || r.startsWith('sdcard/') || r.startsWith('mnt/');
+    final bool looksIOSAbs = r.startsWith('var/') || r.startsWith('private/var/');
+    final bool looksWindowsAbs = r.contains(':/'); // e.g., C:/path
+    return !(looksAndroidAbs || looksIOSAbs || looksWindowsAbs);
+  }
+
+  // Normalize asset keys and collapse duplicate slashes after 'assets/'.
+  String _normalizeAssetPath(String originalPath) {
+    String p = originalPath.replaceAll('\\', '/');
+    if (!p.startsWith('assets/')) return p;
+    // Collapse multiple slashes after 'assets/'
+    p = p.replaceFirst(RegExp(r'^assets/+'), 'assets/');
+    return p;
+  }
+
+  // If a device path was accidentally saved with an 'assets/' prefix, strip it.
+  String _asDevicePath(String originalPath) {
+    String p = originalPath.replaceAll('\\', '/');
+    if (p.startsWith('assets/')) {
+      p = p.replaceFirst(RegExp(r'^assets/+'), '');
+    }
+    return p;
+  }
+
+  // Convenience: for any incoming path, correct obvious mistakes where an absolute
+  // path was prefixed with 'assets/'. Otherwise return unchanged.
+  String _ensureCorrectDevicePath(String originalPath) {
+    final String p = originalPath.replaceAll('\\', '/');
+    if (!p.startsWith('assets/')) return originalPath;
+    final String rest = p.substring('assets/'.length);
+    final String r = rest.startsWith('/') ? rest.substring(1) : rest;
+    final bool looksAndroidAbs = r.startsWith('data/') || r.startsWith('storage/') || r.startsWith('sdcard/') || r.startsWith('mnt/');
+    final bool looksIOSAbs = r.startsWith('var/') || r.startsWith('private/var/');
+    final bool looksWindowsAbs = r.contains(':/');
+    if (looksAndroidAbs || looksIOSAbs || looksWindowsAbs) {
+      // Strip the mistaken 'assets/' prefix
+      return r;
+    }
+    return originalPath;
   }
 }

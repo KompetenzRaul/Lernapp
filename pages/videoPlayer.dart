@@ -19,13 +19,30 @@ class _VideoplayerState extends State<Videoplayer> {
   bool _hasEnded = false; // Prevent multiple calls
   VoidCallback? _onVideoEndListener;
 
+  // Normalize a path: if it starts with 'assets/' but the remainder looks like an absolute
+  // device path (Android/iOS/Windows), strip the mistaken prefix.
+  String _normalizeVideoPath(String originalPath) {
+    String p = originalPath.replaceAll('\\', '/');
+    if (!p.startsWith('assets/')) return originalPath;
+    final String rest = p.substring('assets/'.length);
+    final String r = rest.startsWith('/') ? rest.substring(1) : rest;
+    final bool looksAndroidAbs = r.startsWith('data/') || r.startsWith('storage/') || r.startsWith('sdcard/') || r.startsWith('mnt/');
+    final bool looksIOSAbs = r.startsWith('var/') || r.startsWith('private/var/');
+    final bool looksWindowsAbs = r.contains(':/');
+    if (looksAndroidAbs || looksIOSAbs || looksWindowsAbs) {
+      return r; // strip mistaken assets/ prefix
+    }
+    return originalPath;
+  }
+
   Future<void> _initializePlayer() async {
     _hasEnded = false; // Reset beim Initialisieren
-    if (widget.videoPath.startsWith('assets/')) {
-      _videoPlayerController = VideoPlayerController.asset(widget.videoPath);
+    final normalizedPath = _normalizeVideoPath(widget.videoPath);
+    if (normalizedPath.startsWith('assets/')) {
+      _videoPlayerController = VideoPlayerController.asset(normalizedPath);
     } else {
       _videoPlayerController = VideoPlayerController.file(
-        io.File(widget.videoPath),
+        io.File(normalizedPath),
       );
     }
 

@@ -3,7 +3,7 @@ import 'package:flutter/material.dart';
 import 'package:file_picker/file_picker.dart';
 import 'package:video_player/video_player.dart';
 import 'package:path/path.dart' as p;
-import 'package:path_provider/path_provider.dart'; // optional
+import 'package:path_provider/path_provider.dart';
 import 'package:permission_handler/permission_handler.dart';
 import 'package:provider/provider.dart';
 
@@ -27,7 +27,6 @@ class _CreateVideoPlaylistPageState extends State<CreateVideoPlaylistPage> {
     playlistContent: [],
   );
 
-  final _formKey = GlobalKey<FormState>();
   final TextEditingController _playlistNameController = TextEditingController();
 
   // Firestore-Dokument-ID der angelegten Playlist
@@ -55,22 +54,74 @@ class _CreateVideoPlaylistPageState extends State<CreateVideoPlaylistPage> {
   }
 
   Future<bool> _ensureStoragePermission() async {
-    if (!Platform.isAndroid) return true;
+    // Android: request videos permission on Android 13+; fallback to storage on older devices.
+    if (Platform.isAndroid) {
+      // Prefer the Android 13+ scoped media permission for videos
+      var videoStatus = await Permission.videos.status;
+      if (!videoStatus.isGranted) {
+        videoStatus = await Permission.videos.request();
+      }
+      if (videoStatus.isGranted) return true;
 
-    var status = await Permission.storage.status;
-    if (status.isGranted) return true;
+      // Fallback for older Android versions where READ_EXTERNAL_STORAGE was used
+      var storageStatus = await Permission.storage.status;
+      if (!storageStatus.isGranted) {
+        storageStatus = await Permission.storage.request();
+      }
+      if (storageStatus.isGranted) return true;
 
-    status = await Permission.storage.request();
-    if (status.isGranted) return true;
-
-    if (mounted) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-          content: Text('Speicherzugriff benötigt, um Dateien auszuwählen.'),
-        ),
-      );
+      // If permanently denied, offer to open settings
+      final permanentlyDenied =
+          await Permission.videos.isPermanentlyDenied ||
+          await Permission.storage.isPermanentlyDenied;
+      if (permanentlyDenied && mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: const Text(
+              'Zugriff auf Videos ist deaktiviert. Bitte in den Einstellungen erlauben.',
+            ),
+            action: SnackBarAction(
+              label: 'Einstellungen',
+              onPressed: openAppSettings,
+            ),
+          ),
+        );
+      } else if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text('Speicher-/Videozugriff benötigt, um Dateien auszuwählen.'),
+          ),
+        );
+      }
+      return false;
     }
-    return false;
+
+    // iOS: request Photos permission when needed (FilePicker may use Files app and not require it)
+    if (Platform.isIOS) {
+      var photos = await Permission.photos.status;
+      if (!photos.isGranted) {
+        photos = await Permission.photos.request();
+      }
+      if (photos.isGranted) return true;
+
+      if (await Permission.photos.isPermanentlyDenied && mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: const Text(
+              'Fotos/Videos Zugriff ist deaktiviert. Bitte in den Einstellungen erlauben.',
+            ),
+            action: SnackBarAction(
+              label: 'Einstellungen',
+              onPressed: openAppSettings,
+            ),
+          ),
+        );
+      }
+      return false;
+    }
+
+    // Other platforms
+    return true;
   }
 
   Future<void> _pickVideo() async {
@@ -98,20 +149,71 @@ class _CreateVideoPlaylistPageState extends State<CreateVideoPlaylistPage> {
       final repo = FirestoreRepository();
       int addedCount = 0;
 
+      // Helper to normalize picked file paths (avoid mistaken 'assets/' prefix)
+      String _sanitizePickedPath(String original) {
+        String p0 = original.replaceAll('\\', '/');
+        if (p0.startsWith('assets/')) {
+          p0 = p0.replaceFirst(RegExp(r'^assets/+'), '');
+        }
+        p0 = p0.replaceFirst(RegExp(r'^/+'), '/');
+        return p0;
+      }
+
+  // Prepare persistent storage directory
+      final docsDir = await getApplicationDocumentsDirectory();
+      final videoTargetDir = Directory(p.join(docsDir.path, 'media', 'video'));
+      if (!await videoTargetDir.exists()) {
+        await videoTargetDir.create(recursive: true);
+      }
+      String _uniqueName(String base) {
+        final ts = DateTime.now().microsecondsSinceEpoch;
+        final name = p.basenameWithoutExtension(base);
+        final ext = p.extension(base);
+        final safeName = name.replaceAll(RegExp(r'[^A-Za-z0-9._-]+'), '_');
+        return '${safeName}_$ts$ext';
+      }
+
       for (final f in result.files) {
         final path = f.path;
         if (path == null) continue;
+        final safePath = _sanitizePickedPath(path);
+        // Persist only when needed to avoid double usage: move from temp if necessary
+        String storedPath = safePath;
+        try {
+          final src = File(safePath);
+          if (await src.exists()) {
+            final tmpDir = await getTemporaryDirectory();
+            final isFromTemp = safePath.replaceAll('\\', '/').startsWith(
+              tmpDir.path.replaceAll('\\', '/'),
+            );
+            if (isFromTemp) {
+              final dest = p.join(videoTargetDir.path, _uniqueName(p.basename(safePath)));
+              try {
+                final moved = await src.rename(dest);
+                storedPath = moved.path;
+              } catch (_) {
+                await src.copy(dest);
+                storedPath = dest;
+                try { await src.delete(); } catch (_) {}
+              }
+            } else {
+              storedPath = safePath;
+            }
+          }
+        } catch (e) {
+          debugPrint('Video persist/move failed: $e');
+        }
 
         // Dauer via video_player auslesen
-        final controller = VideoPlayerController.file(File(path));
+  final controller = VideoPlayerController.file(File(storedPath));
         await controller.initialize();
         final duration = controller.value.duration;
         await controller.dispose();
 
-        final filename = f.name.isNotEmpty ? f.name : p.basename(path);
+        final filename = f.name.isNotEmpty ? f.name : p.basename(storedPath);
         final item = VideoElement(
           name: p.basenameWithoutExtension(filename),
-          filePath: path,
+          filePath: storedPath,
           duration: duration.inSeconds.toDouble(),
         )..uid = ''; // optional, falls du uid nutzt
 

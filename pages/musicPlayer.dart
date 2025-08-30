@@ -1,3 +1,4 @@
+import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import '../datamodels/musicPlaylistProvider.dart';
@@ -10,7 +11,10 @@ class MusicPlayer extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Consumer<MusicPlaylistProvider>(
+  // Ensure provider knows who to notify on completion
+  final provider = context.read<MusicPlaylistProvider>();
+  provider.setOnFinished(onFinished);
+  return Consumer<MusicPlaylistProvider>(
       builder: (context, value, child) {
         // Daten holen
         final playlist = value.playlist;
@@ -55,13 +59,32 @@ class MusicPlayer extends StatelessWidget {
             children: [
               const SizedBox(height: 50.0),
 
-              // album cover image
-              Image.asset(
-                currentSong.albumArtImagePath,
-                height: 300,
-                width: 300,
-                fit: BoxFit.fill,
-              ),
+              // album cover image (file path or fallback asset)
+              (() {
+                final artPath = currentSong.albumArtImagePath;
+                if (artPath.isNotEmpty) {
+                  return Image.file(
+                    File(artPath),
+                    height: 300,
+                    width: 300,
+                    fit: BoxFit.cover,
+                    errorBuilder: (context, error, stackTrace) {
+                      return Image.asset(
+                        'assets/images/test_image_1.png',
+                        height: 300,
+                        width: 300,
+                        fit: BoxFit.cover,
+                      );
+                    },
+                  );
+                }
+                return Image.asset(
+                  'assets/images/test_image_1.png',
+                  height: 300,
+                  width: 300,
+                  fit: BoxFit.cover,
+                );
+              })(),
 
               // song name
               Text(currentSong.name),

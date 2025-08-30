@@ -49,3 +49,9 @@ app.*.map.json
 
 # Backup/old android project (should not be tracked)
 android_old/
+
+# Flutter desktop ephemeral (do not commit)
+linux/flutter/ephemeral/
+windows/flutter/ephemeral/
+macos/Flutter/ephemeral/
+**/.plugin_symlinks/
