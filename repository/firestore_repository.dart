@@ -1,4 +1,5 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:firebase_auth/firebase_auth.dart';
 import '../datamodels/musicElement.dart';
 import '../datamodels/videoElement.dart';
 import '../datamodels/musicPlaylist.dart';
@@ -66,7 +67,7 @@ class FirestoreRepository {
   }
 
   Future<String> createMusicPlaylist(String name) async {
-    final ref = await _db.collection(_musicPlaylistsCol).add({
+    final ref = await _db.collection(FirebaseAuth.instance.currentUser!.uid).doc("data").collection(_musicPlaylistsCol).add({
       'name': name,
       'createdAt': FieldValue.serverTimestamp(),
     });
@@ -115,7 +116,9 @@ class FirestoreRepository {
     data['order'] = order ?? 0;
     data['createdAt'] = FieldValue.serverTimestamp();
     final ref = await _db
-        .collection(_musicPlaylistsCol)
+        .collection(FirebaseAuth.instance.currentUser!.uid)
+        .doc("data")
+        .collection("musicPlaylists")
         .doc(playlistId)
         .collection(_itemsSubCol)
         .add(data);
@@ -180,7 +183,7 @@ class FirestoreRepository {
   }
 
   Future<String> createVideoPlaylist(String name) async {
-    final ref = await _db.collection(_videoPlaylistsCol).add({
+    final ref = await _db.collection(FirebaseAuth.instance.currentUser!.uid).doc("data").collection(_videoPlaylistsCol).add({
       'name': name,
       'createdAt': FieldValue.serverTimestamp(),
     });
@@ -228,10 +231,12 @@ class FirestoreRepository {
     data['order'] = order ?? 0;
     data['createdAt'] = FieldValue.serverTimestamp();
     final ref = await _db
-        .collection(_videoPlaylistsCol)
+        .collection(FirebaseAuth.instance.currentUser!.uid)
+        .doc("data")
+        .collection("videoPlaylists")
         .doc(playlistId)
         .collection(_itemsSubCol)
-        .add(data);
+        .doc(item.uid);
     return ref.id;
   }
 
