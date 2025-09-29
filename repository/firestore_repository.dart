@@ -163,7 +163,9 @@ class FirestoreRepository {
           for (final doc in snap.docs) {
             final items =
                 await _db
-                    .collection(_videoPlaylistsCol)
+                    .collection(FirebaseAuth.instance.currentUser!.uid)
+                    .doc("data")
+                    .collection("videoPlaylists")
                     .doc(doc.id)
                     .collection(_itemsSubCol)
                     .orderBy('createdAt', descending: false)
@@ -193,6 +195,8 @@ class FirestoreRepository {
   Future<void> deleteVideoPlaylist(String playlistId) async {
     final batch = _db.batch();
     final itemsRef = _db
+        .collection(FirebaseAuth.instance.currentUser!.uid)
+        .doc("data")
         .collection(_videoPlaylistsCol)
         .doc(playlistId)
         .collection(_itemsSubCol);
@@ -211,6 +215,8 @@ class FirestoreRepository {
 
   Stream<List<VideoElement>> streamVideoItems(String playlistId) {
     return _db
+        .collection(FirebaseAuth.instance.currentUser!.uid)
+        .doc("data")
         .collection(_videoPlaylistsCol)
         .doc(playlistId)
         .collection(_itemsSubCol)
@@ -233,15 +239,18 @@ class FirestoreRepository {
     final ref = await _db
         .collection(FirebaseAuth.instance.currentUser!.uid)
         .doc("data")
-        .collection("videoPlaylists")
+        .collection(_videoPlaylistsCol)
         .doc(playlistId)
         .collection(_itemsSubCol)
-        .doc(item.uid);
+        .doc(item.name);
+    ref.set(item.toMap());
     return ref.id;
   }
 
   Future<void> removeVideoItem(String playlistId, String itemId) async {
     await _db
+        .collection(FirebaseAuth.instance.currentUser!.uid)
+        .doc("data")
         .collection(_videoPlaylistsCol)
         .doc(playlistId)
         .collection(_itemsSubCol)
