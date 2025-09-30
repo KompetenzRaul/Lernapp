@@ -5,6 +5,8 @@ import 'musicPlayer.dart';
 import 'videoPlayer.dart';
 import '../datamodels/videoPlaylistProvider.dart';
 
+double playbackSpeed = 1.0;
+
 class PlayerController extends StatefulWidget {
   final double mediaRatio;
   const PlayerController({super.key, required this.mediaRatio});

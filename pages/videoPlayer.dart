@@ -4,6 +4,8 @@ import 'package:flutter/services.dart';
 import 'package:video_player/video_player.dart';
 import 'dart:io' as io;
 
+import 'playerController.dart';
+
 class Videoplayer extends StatefulWidget {
   const Videoplayer({super.key, required this.videoPath, this.onVideoEnd});
 
@@ -26,8 +28,13 @@ class _VideoplayerState extends State<Videoplayer> {
     if (!p.startsWith('assets/')) return originalPath;
     final String rest = p.substring('assets/'.length);
     final String r = rest.startsWith('/') ? rest.substring(1) : rest;
-    final bool looksAndroidAbs = r.startsWith('data/') || r.startsWith('storage/') || r.startsWith('sdcard/') || r.startsWith('mnt/');
-    final bool looksIOSAbs = r.startsWith('var/') || r.startsWith('private/var/');
+    final bool looksAndroidAbs =
+        r.startsWith('data/') ||
+        r.startsWith('storage/') ||
+        r.startsWith('sdcard/') ||
+        r.startsWith('mnt/');
+    final bool looksIOSAbs =
+        r.startsWith('var/') || r.startsWith('private/var/');
     final bool looksWindowsAbs = r.contains(':/');
     if (looksAndroidAbs || looksIOSAbs || looksWindowsAbs) {
       return r; // strip mistaken assets/ prefix
@@ -70,6 +77,7 @@ class _VideoplayerState extends State<Videoplayer> {
       }
     };
     _videoPlayerController.addListener(_onVideoEndListener!);
+    _videoPlayerController.setPlaybackSpeed(playbackSpeed);
 
     final controller = ChewieController(
       videoPlayerController: _videoPlayerController,
@@ -109,6 +117,7 @@ class _VideoplayerState extends State<Videoplayer> {
 
   @override
   void dispose() {
+    playbackSpeed = _videoPlayerController.value.playbackSpeed;
     _videoPlayerController.removeListener(_onVideoEndListener!);
     _chewieController?.dispose();
     _videoPlayerController.dispose();
