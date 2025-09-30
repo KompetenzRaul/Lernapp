@@ -39,6 +39,8 @@ class FirestoreRepository {
   /// Playlists inkl. deren Items streamen
   Stream<List<MusicPlaylist>> streamMusicPlaylistsWithItems() {
     return _db
+        .collection(FirebaseAuth.instance.currentUser!.uid)
+        .doc("data")
         .collection(_musicPlaylistsCol)
         .orderBy('createdAt', descending: true)
         .snapshots()
@@ -47,6 +49,8 @@ class FirestoreRepository {
           for (final doc in snap.docs) {
             final items =
                 await _db
+                    .collection(FirebaseAuth.instance.currentUser!.uid)
+                    .doc("data")
                     .collection(_musicPlaylistsCol)
                     .doc(doc.id)
                     .collection(_itemsSubCol)
@@ -78,6 +82,8 @@ class FirestoreRepository {
   Future<void> deleteMusicPlaylist(String playlistId) async {
     final batch = _db.batch();
     final itemsRef = _db
+        .collection(FirebaseAuth.instance.currentUser!.uid)
+        .doc("data")
         .collection(_musicPlaylistsCol)
         .doc(playlistId)
         .collection(_itemsSubCol);
@@ -88,23 +94,6 @@ class FirestoreRepository {
     }
     batch.delete(_db.collection(_musicPlaylistsCol).doc(playlistId));
     await batch.commit();
-  }
-
-  // ---------------------------
-  // Music: Items
-  // ---------------------------
-
-  Stream<List<MusicElement>> streamMusicItems(String playlistId) {
-    return _db
-        .collection(_musicPlaylistsCol)
-        .doc(playlistId)
-        .collection(_itemsSubCol)
-        .orderBy('createdAt', descending: false)
-        .snapshots()
-        .map(
-          (snap) =>
-              snap.docs.map((d) => MusicElement.fromMap(d.data())).toList(),
-        );
   }
 
   Future<String> addMusicItem(
@@ -127,6 +116,8 @@ class FirestoreRepository {
 
   Future<void> removeMusicItem(String playlistId, String itemId) async {
     await _db
+        .collection(FirebaseAuth.instance.currentUser!.uid)
+        .doc("data")
         .collection(_musicPlaylistsCol)
         .doc(playlistId)
         .collection(_itemsSubCol)
@@ -140,6 +131,8 @@ class FirestoreRepository {
 
   Stream<List<VideoPlaylist>> streamVideoPlaylists() {
     return _db
+        .collection(FirebaseAuth.instance.currentUser!.uid)
+        .doc("data")
         .collection(_videoPlaylistsCol)
         .orderBy('createdAt', descending: true)
         .snapshots()
@@ -155,6 +148,8 @@ class FirestoreRepository {
 
   Stream<List<VideoPlaylist>> streamVideoPlaylistsWithItems() {
     return _db
+        .collection(FirebaseAuth.instance.currentUser!.uid)
+        .doc("data")
         .collection(_videoPlaylistsCol)
         .orderBy('createdAt', descending: true)
         .snapshots()
@@ -165,7 +160,7 @@ class FirestoreRepository {
                 await _db
                     .collection(FirebaseAuth.instance.currentUser!.uid)
                     .doc("data")
-                    .collection("videoPlaylists")
+                    .collection(_videoPlaylistsCol)
                     .doc(doc.id)
                     .collection(_itemsSubCol)
                     .orderBy('createdAt', descending: false)
