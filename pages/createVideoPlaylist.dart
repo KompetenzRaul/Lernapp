@@ -493,26 +493,6 @@ class _CreateVideoPlaylistPageState extends State<CreateVideoPlaylistPage> {
 
             const SizedBox(height: 20),
 
-            // (Dein zweites Expanded mit derselben Liste lasse ich unangetastet,
-            //  damit die UI identisch bleibt. Es zeigt dieselben Items.)
-            Expanded(
-              child: Container(
-                color: Colors.white,
-                child: ListView.separated(
-                  scrollDirection: Axis.vertical,
-                  itemCount: _playlist.playlistContent.length,
-                  separatorBuilder:
-                      (BuildContext context, int index) =>
-                          const Divider(color: Color(0xff425159)),
-                  itemBuilder: (BuildContext context, int index) {
-                    return _playlist.playlistContent[index].toListTile();
-                  },
-                ),
-              ),
-            ),
-
-            const SizedBox(height: 20),
-
             Center(
               child: FloatingActionButton.extended(
                 onPressed: (_saving || !canCreate) ? null : _onCreatePressed,
