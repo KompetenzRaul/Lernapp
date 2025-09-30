@@ -6,11 +6,117 @@ import 'dart:io' as io;
 
 import 'playerController.dart';
 
+ChewieController _chewieOf(BuildContext context) =>
+    ChewieController.of(context);
+VideoPlayerController _videoOf(BuildContext context) =>
+    _chewieOf(context).videoPlayerController;
+
+class ViducateControls extends StatefulWidget {
+  const ViducateControls({super.key, this.onBookmark});
+
+  final VoidCallback? onBookmark;
+
+  @override
+  State<ViducateControls> createState() => _ViducateControlsState();
+}
+
+class _ViducateControlsState extends State<ViducateControls> {
+  double _currentSpeed = 1.0;
+
+  @override
+  void didChangeDependencies() {
+    super.didChangeDependencies();
+    // aktuellen Speed aus dem VideoController lesen
+    _currentSpeed = _videoOf(context).value.playbackSpeed;
+  }
+
+  Future<void> _cycleSpeed() async {
+    final v = _videoOf(context);
+    final chewie = _chewieOf(context);
+
+    final speeds =
+        chewie.playbackSpeeds.isNotEmpty
+            ? chewie.playbackSpeeds
+            : const [0.5, 1.0, 1.25, 1.5, 1.75, 2.0];
+
+    final idx = speeds.indexWhere((s) => (s - _currentSpeed).abs() < 0.0001);
+    final next = speeds[(idx < 0 ? 0 : (idx + 1) % speeds.length)];
+
+    await v.setPlaybackSpeed(next);
+    setState(() => _currentSpeed = next);
+
+    playbackSpeed = next;
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return Stack(
+      children: [
+        const MaterialControls(
+        ),
+
+        Positioned(
+          top: 1,
+          right: 30,
+          child: Row(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              ElevatedButton(
+                style: ElevatedButton.styleFrom(
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 10,
+                    vertical: 8,
+                  ),
+                  backgroundColor: Colors.black.withOpacity(0.55),
+                  foregroundColor: Colors.white,
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(10),
+                  ),
+                  elevation: 0,
+                ),
+                onPressed: _cycleSpeed,
+                child: Text(
+                  '${_currentSpeed.toStringAsFixed(_currentSpeed % 1 == 0 ? 0 : 2)}×',
+                ),
+              ),
+              const SizedBox(width: 8),
+
+              // VIDEO MERKEN — aktuell nur Placeholder
+              ElevatedButton.icon(
+                style: ElevatedButton.styleFrom(
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 10,
+                    vertical: 8,
+                  ),
+                  backgroundColor: Colors.black.withOpacity(0.55),
+                  foregroundColor: Colors.white,
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(10),
+                  ),
+                  elevation: 0,
+                ),
+                onPressed:
+                    widget.onBookmark ??
+                    () {
+                      debugPrint('Video Merken gedrückt');
+                    },
+                icon: const Icon(Icons.bookmark_border, size: 18),
+                label: const Text('Merken'),
+              ),
+            ],
+          ),
+        ),
+      ],
+    );
+  }
+}
+
 class Videoplayer extends StatefulWidget {
   const Videoplayer({super.key, required this.videoPath, this.onVideoEnd});
 
   final String videoPath;
   final ValueChanged<double>? onVideoEnd;
+
   @override
   State<Videoplayer> createState() => _VideoplayerState();
 }
@@ -67,7 +173,7 @@ class _VideoplayerState extends State<Videoplayer> {
       if (isEnded && !_hasEnded) {
         _hasEnded = true;
         if (widget.onVideoEnd != null) {
-          print("Video has ended, calling callback.");
+          debugPrint("Video has ended, calling callback.");
           _chewieController?.exitFullScreen();
           widget.onVideoEnd!(
             _chewieController!.videoPlayerController.value.duration.inSeconds
@@ -77,6 +183,8 @@ class _VideoplayerState extends State<Videoplayer> {
       }
     };
     _videoPlayerController.addListener(_onVideoEndListener!);
+
+    // Deine globale/gespeicherte Speed übernehmen
     _videoPlayerController.setPlaybackSpeed(playbackSpeed);
 
     final controller = ChewieController(
@@ -84,26 +192,25 @@ class _VideoplayerState extends State<Videoplayer> {
       autoPlay: false,
       looping: false,
       fullScreenByDefault: true,
-      deviceOrientationsAfterFullScreen: [DeviceOrientation.portraitUp],
-      customControls: const MaterialControls(),
+      deviceOrientationsAfterFullScreen: const [DeviceOrientation.portraitUp],
+
+      // Unsere eigenen Controls mit Overlay-Buttons
+      customControls: ViducateControls(
+        onBookmark: () {
+          // TODO: später deine Merk-Logik
+          debugPrint('Video Merken (Overlay-Button)');
+        },
+      ),
+
+      // Untermenü deaktivieren – wir machen Speed/Optionen im Overlay:
+      allowPlaybackSpeedChanging: false,
       zoomAndPan: true,
       hideControlsTimer: const Duration(seconds: 3),
-      progressIndicatorDelay: const Duration(
-        days: 1,
-      ), // Es gibt gerade ein Bug in Chewie der verhindert, dass der Ladespinner verschwindet wenn er einmal auftaucht.
-      additionalOptions: (context) {
-        return <OptionItem>[
-          OptionItem(
-            onTap: (context) {
-              // Handle option tap
-              print('Video Merken $context');
-            },
-            iconData: Icons.note,
-            title: 'Video Merken',
-          ),
-        ];
-      },
+      progressIndicatorDelay: const Duration(days: 1), // Chewie Bug-Workaround
+      // Optional: eigene Speed-Liste, die der Cycle-Button nutzt:
+      playbackSpeeds: const [0.5, 1.0, 1.25, 1.5, 1.75, 2.0],
     );
+
     setState(() {
       _chewieController = controller;
     });
@@ -117,7 +224,9 @@ class _VideoplayerState extends State<Videoplayer> {
 
   @override
   void dispose() {
+    // letzte Speed merken (global)
     playbackSpeed = _videoPlayerController.value.playbackSpeed;
+
     _videoPlayerController.removeListener(_onVideoEndListener!);
     _chewieController?.dispose();
     _videoPlayerController.dispose();
@@ -140,7 +249,7 @@ class _VideoplayerState extends State<Videoplayer> {
                     bottomRight: Radius.circular(15),
                   ),
                 ),
-                backgroundColor: Color(0xffb70036),
+                backgroundColor: const Color(0xffb70036),
                 title: const Text(
                   "Viducate",
                   style: TextStyle(
@@ -154,14 +263,14 @@ class _VideoplayerState extends State<Videoplayer> {
               : null,
       body: Column(
         children: [
-          SizedBox(height: 20),
+          const SizedBox(height: 20),
           _chewieController != null
               ? AspectRatio(
                 aspectRatio: _videoPlayerController.value.aspectRatio,
                 child: Chewie(controller: _chewieController!),
               )
               : const Center(child: CircularProgressIndicator()),
-          if (isPortrait) Expanded(flex: 2, child: Placeholder()),
+          if (isPortrait) const Expanded(flex: 2, child: Placeholder()),
         ],
       ),
     );
