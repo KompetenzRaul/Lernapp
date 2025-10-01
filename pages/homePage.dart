@@ -1,5 +1,8 @@
+import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 import 'package:smooth_page_indicator/smooth_page_indicator.dart';
+
 import 'playerController.dart';
 import 'package:provider/provider.dart';
 
@@ -17,6 +20,7 @@ class _HomepageState extends State<Homepage> {
   String? _selectedVideoPlaylist;
   String? _selectedMusicPlaylist;
 
+
   final PageController _videoController = PageController(
     viewportFraction: 0.65,
   );
@@ -32,83 +36,95 @@ class _HomepageState extends State<Homepage> {
             ? _selectedVideoPlaylist == name
             : _selectedMusicPlaylist == name;
 
-    return Container(
-      width: 100,
-      height: 160,
-      padding: const EdgeInsets.all(12),
-      decoration: BoxDecoration(
-        color: Colors.white,
-        borderRadius: BorderRadius.circular(14),
-        boxShadow: const [
-          BoxShadow(color: Colors.black12, blurRadius: 4, offset: Offset(2, 2)),
-        ],
-      ),
-      child: Column(
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          Text(name, textAlign: TextAlign.center),
-          const SizedBox(height: 8),
-          SizedBox(
-            width: double.infinity,
-            child: OutlinedButton.icon(
-              onPressed: () {
-                setState(() {
-                  if (isVideo) {
-                    if (_selectedVideoPlaylist == name) {
-                      _selectedVideoPlaylist = null;
+    return GestureDetector(
+      onLongPress: () async{
+
+          QuerySnapshot snap = await FirebaseFirestore.instance.collection(FirebaseAuth.instance.currentUser!.uid)
+              .doc("data")
+              .collection(isVideo ? "videoPlaylists" : "musicPlaylists")
+              .limit(100)
+              .where("name", isEqualTo: name).get();
+          snap.docs[0].reference.delete();
+
+      },
+      child: Container(
+        width: 100,
+        height: 160,
+        padding: const EdgeInsets.all(12),
+        decoration: BoxDecoration(
+          color: Colors.white,
+          borderRadius: BorderRadius.circular(14),
+          boxShadow: const [
+            BoxShadow(color: Colors.black12, blurRadius: 4, offset: Offset(2, 2)),
+          ],
+        ),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Text(name, textAlign: TextAlign.center),
+            const SizedBox(height: 8),
+            SizedBox(
+              width: double.infinity,
+              child: OutlinedButton.icon(
+                onPressed: () {
+                  setState(() {
+                    if (isVideo) {
+                      if (_selectedVideoPlaylist == name) {
+                        _selectedVideoPlaylist = null;
+                      } else {
+                        _selectedVideoPlaylist = name;
+                        // aktive Playlist im Provider setzen
+                        context
+                            .read<VideoPlaylistProvider>()
+                            .setActivePlaylistByName(name);
+                      }
                     } else {
-                      _selectedVideoPlaylist = name;
-                      // aktive Playlist im Provider setzen
-                      context
-                          .read<VideoPlaylistProvider>()
-                          .setActivePlaylistByName(name);
+                      if (_selectedMusicPlaylist == name) {
+                        _selectedMusicPlaylist = null;
+                      } else {
+                        _selectedMusicPlaylist = name;
+                        context
+                            .read<MusicPlaylistProvider>()
+                            .setActivePlaylistByName(name);
+                      }
                     }
-                  } else {
-                    if (_selectedMusicPlaylist == name) {
-                      _selectedMusicPlaylist = null;
-                    } else {
-                      _selectedMusicPlaylist = name;
-                      context
-                          .read<MusicPlaylistProvider>()
-                          .setActivePlaylistByName(name);
-                    }
-                  }
-                });
-              },
-              icon: Icon(
-                isSelected ? Icons.check : Icons.add,
-                size: 16,
-                color: isSelected ? Colors.white : const Color(0xff425159),
-              ),
-              label: Text(
-                isSelected ? "Gewählt" : "Auswählen",
-                style: TextStyle(
-                  fontSize: 14,
-                  fontWeight: FontWeight.w500,
+                  });
+                },
+                icon: Icon(
+                  isSelected ? Icons.check : Icons.add,
+                  size: 16,
                   color: isSelected ? Colors.white : const Color(0xff425159),
                 ),
-              ),
-              style: OutlinedButton.styleFrom(
-                backgroundColor:
-                    isSelected ? const Color(0xffb70036) : Colors.transparent,
-                side: BorderSide(
-                  color:
-                      isSelected
-                          ? const Color(0xffb70036)
-                          : const Color(0xff425159),
-                  width: 1,
+                label: Text(
+                  isSelected ? "Gewählt" : "Auswählen",
+                  style: TextStyle(
+                    fontSize: 14,
+                    fontWeight: FontWeight.w500,
+                    color: isSelected ? Colors.white : const Color(0xff425159),
+                  ),
                 ),
-                shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(30),
-                ),
-                padding: const EdgeInsets.symmetric(
-                  vertical: 8,
-                  horizontal: 12,
+                style: OutlinedButton.styleFrom(
+                  backgroundColor:
+                      isSelected ? const Color(0xffb70036) : Colors.transparent,
+                  side: BorderSide(
+                    color:
+                        isSelected
+                            ? const Color(0xffb70036)
+                            : const Color(0xff425159),
+                    width: 1,
+                  ),
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(30),
+                  ),
+                  padding: const EdgeInsets.symmetric(
+                    vertical: 8,
+                    horizontal: 12,
+                  ),
                 ),
               ),
             ),
-          ),
-        ],
+          ],
+        ),
       ),
     );
   }
@@ -287,29 +303,34 @@ class _HomepageState extends State<Homepage> {
 
     return Column(
       children: [
-        Container(
-          height: height,
-          margin: const EdgeInsets.symmetric(vertical: 16),
-          decoration: BoxDecoration(
-            color: const Color(0xffb70036),
-            borderRadius: BorderRadius.circular(16),
-          ),
-          child: PageView.builder(
-            controller: controller,
-            itemCount: playlists.length,
-            itemBuilder: (context, index) {
-              final playlist = playlists[index];
-              return Padding(
-                padding: const EdgeInsets.symmetric(
-                  horizontal: 12.0,
-                  vertical: 12.0,
-                ),
-                child: _buildPlaylistCard(
-                  playlist.playlistName,
-                  isVideo: isVideo,
-                ),
-              );
-            },
+        GestureDetector(
+          onLongPress: () {
+
+          },
+          child: Container(
+            height: height,
+            margin: const EdgeInsets.symmetric(vertical: 16),
+            decoration: BoxDecoration(
+              color: const Color(0xffb70036),
+              borderRadius: BorderRadius.circular(16),
+            ),
+            child: PageView.builder(
+              controller: controller,
+              itemCount: playlists.length,
+              itemBuilder: (context, index) {
+                final playlist = playlists[index];
+                return Padding(
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 12.0,
+                    vertical: 12.0,
+                  ),
+                  child: _buildPlaylistCard(
+                    playlist.playlistName,
+                    isVideo: isVideo,
+                  ),
+                );
+              },
+            ),
           ),
         ),
         Center(

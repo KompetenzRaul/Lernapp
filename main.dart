@@ -24,6 +24,7 @@ void main() async {
 
   // 2) App starten
   runApp(const MyApp());
+  print("User ID: ${FirebaseAuth.instance.currentUser!.uid}");
 
   // 3) MetadataGod später/lazy
   _initMetadata();
