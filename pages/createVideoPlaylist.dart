@@ -389,7 +389,7 @@ class _CreateVideoPlaylistPageState extends State<CreateVideoPlaylistPage> {
                       width: 160,
                       padding: const EdgeInsets.all(10),
                       decoration: BoxDecoration(
-                        color: Colors.white,
+                        color: Colors.grey.shade300,
                         borderRadius: BorderRadius.circular(12),
                         boxShadow: const [
                           BoxShadow(color: Colors.black12, blurRadius: 3),

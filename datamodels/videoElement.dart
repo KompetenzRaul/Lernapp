@@ -16,6 +16,7 @@ class VideoElement {
   }
 
   ListTile toListTile() {
+    Duration dur = Duration(seconds: this.duration.toInt());
     return ListTile(
       title: Text(
         this.name,
@@ -27,7 +28,7 @@ class VideoElement {
         ),
       ),
       trailing: Text(
-        duration.toString().replaceAll(".", ":"),
+        "${dur.inMinutes}:${(dur.inSeconds % 60).toString().padLeft(2, '0')}",
         style: TextStyle(fontSize: 14),
       ),
       iconColor: Color(0xff425159),
