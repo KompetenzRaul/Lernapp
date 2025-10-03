@@ -3,6 +3,8 @@ import 'package:chewie/chewie.dart';
 import 'package:flutter/services.dart';
 import 'package:video_player/video_player.dart';
 import 'dart:io' as io;
+import '../datamodels/error_markers.dart';
+import '../pages/error_markers_page.dart';
 
 import 'playerController.dart';
 
@@ -52,8 +54,7 @@ class _ViducateControlsState extends State<ViducateControls> {
   Widget build(BuildContext context) {
     return Stack(
       children: [
-        const MaterialControls(
-        ),
+        const MaterialControls(),
 
         Positioned(
           top: 1,
@@ -81,7 +82,6 @@ class _ViducateControlsState extends State<ViducateControls> {
               ),
               const SizedBox(width: 8),
 
-              // VIDEO MERKEN — aktuell nur Placeholder
               ElevatedButton.icon(
                 style: ElevatedButton.styleFrom(
                   padding: const EdgeInsets.symmetric(
@@ -97,8 +97,27 @@ class _ViducateControlsState extends State<ViducateControls> {
                 ),
                 onPressed:
                     widget.onBookmark ??
-                    () {
-                      debugPrint('Video Merken gedrückt');
+                    () async {
+                      final position = _videoOf(context).value.position;
+
+                      // Einen kurzen Namen abfragen (oder Default nehmen)
+                      final raw = await _askForName(context);
+                      final title =
+                          (raw == null || raw.trim().isEmpty)
+                              ? 'Unbenannter Fehler'
+                              : raw.trim();
+
+                      final mediaId = _videoOf(context).dataSource;
+
+                      ErrorMarkersStore.instance.add(
+                        mediaId: mediaId,
+                        title: title,
+                        position: position,
+                      );
+
+                      ScaffoldMessenger.of(context).showSnackBar(
+                        const SnackBar(content: Text('Marke gespeichert')),
+                      );
                     },
                 icon: const Icon(Icons.bookmark_border, size: 18),
                 label: const Text('Merken'),
@@ -184,7 +203,6 @@ class _VideoplayerState extends State<Videoplayer> {
     };
     _videoPlayerController.addListener(_onVideoEndListener!);
 
-    // Deine globale/gespeicherte Speed übernehmen
     _videoPlayerController.setPlaybackSpeed(playbackSpeed);
 
     final controller = ChewieController(
@@ -194,20 +212,14 @@ class _VideoplayerState extends State<Videoplayer> {
       fullScreenByDefault: true,
       deviceOrientationsAfterFullScreen: const [DeviceOrientation.portraitUp],
 
-      // Unsere eigenen Controls mit Overlay-Buttons
-      customControls: ViducateControls(
-        onBookmark: () {
-          // TODO: später deine Merk-Logik
-          debugPrint('Video Merken (Overlay-Button)');
-        },
-      ),
+      customControls: ViducateControls(),
 
-      // Untermenü deaktivieren – wir machen Speed/Optionen im Overlay:
+      // Untermenü deaktivieren
       allowPlaybackSpeedChanging: false,
       zoomAndPan: true,
       hideControlsTimer: const Duration(seconds: 3),
-      progressIndicatorDelay: const Duration(days: 1), // Chewie Bug-Workaround
-      // Optional: eigene Speed-Liste, die der Cycle-Button nutzt:
+      progressIndicatorDelay: const Duration(days: 1),
+
       playbackSpeeds: const [0.5, 1.0, 1.25, 1.5, 1.75, 2.0],
     );
 
@@ -275,4 +287,32 @@ class _VideoplayerState extends State<Videoplayer> {
       ),
     );
   }
+}
+
+Future<String?> _askForName(BuildContext context) async {
+  final controller = TextEditingController();
+  return showDialog<String>(
+    context: context,
+    builder:
+        (ctx) => AlertDialog(
+          title: const Text('Fehler benennen'),
+          content: TextField(
+            controller: controller,
+            autofocus: true,
+            decoration: const InputDecoration(),
+            onSubmitted: (_) => Navigator.of(ctx).pop(controller.text),
+          ),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.of(ctx).pop(),
+              child: const Text('Abbrechen'),
+            ),
+            ElevatedButton.icon(
+              onPressed: () => Navigator.of(ctx).pop(controller.text),
+              icon: const Icon(Icons.flag_outlined),
+              label: const Text('Markieren'),
+            ),
+          ],
+        ),
+  );
 }

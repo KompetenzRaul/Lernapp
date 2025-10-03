@@ -215,7 +215,7 @@ class _CreateVideoPlaylistPageState extends State<CreateVideoPlaylistPage> {
           name: p.basenameWithoutExtension(filename),
           filePath: storedPath,
           duration: duration.inSeconds.toDouble(),
-        )..uid = ''; // optional, falls du uid nutzt
+        )..uid = '';
 
         // Sofort in UI-Liste
         setState(() => _playlist.playlistContent.add(item));

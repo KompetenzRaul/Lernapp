@@ -8,6 +8,7 @@ import 'package:provider/provider.dart';
 
 import '../datamodels/musicPlaylistProvider.dart';
 import '../datamodels/videoPlaylistProvider.dart';
+import '../pages/error_markers_page.dart';
 
 class Homepage extends StatefulWidget {
   const Homepage({super.key});
@@ -19,7 +20,6 @@ class Homepage extends StatefulWidget {
 class _HomepageState extends State<Homepage> {
   String? _selectedVideoPlaylist;
   String? _selectedMusicPlaylist;
-
 
   final PageController _videoController = PageController(
     viewportFraction: 0.65,
@@ -37,15 +37,16 @@ class _HomepageState extends State<Homepage> {
             : _selectedMusicPlaylist == name;
 
     return GestureDetector(
-      onLongPress: () async{
-
-          QuerySnapshot snap = await FirebaseFirestore.instance.collection(FirebaseAuth.instance.currentUser!.uid)
-              .doc("data")
-              .collection(isVideo ? "videoPlaylists" : "musicPlaylists")
-              .limit(100)
-              .where("name", isEqualTo: name).get();
-          snap.docs[0].reference.delete();
-
+      onLongPress: () async {
+        QuerySnapshot snap =
+            await FirebaseFirestore.instance
+                .collection(FirebaseAuth.instance.currentUser!.uid)
+                .doc("data")
+                .collection(isVideo ? "videoPlaylists" : "musicPlaylists")
+                .limit(100)
+                .where("name", isEqualTo: name)
+                .get();
+        snap.docs[0].reference.delete();
       },
       child: Container(
         width: 100,
@@ -55,7 +56,11 @@ class _HomepageState extends State<Homepage> {
           color: Colors.white,
           borderRadius: BorderRadius.circular(14),
           boxShadow: const [
-            BoxShadow(color: Colors.black12, blurRadius: 4, offset: Offset(2, 2)),
+            BoxShadow(
+              color: Colors.black12,
+              blurRadius: 4,
+              offset: Offset(2, 2),
+            ),
           ],
         ),
         child: Column(
@@ -158,6 +163,19 @@ class _HomepageState extends State<Homepage> {
               leading: const Icon(Icons.info),
               title: const Text('Info'),
               onTap: () => Navigator.pop(context),
+            ),
+            ListTile(
+              leading: const Icon(Icons.flag_outlined),
+              title: const Text('Fehlerliste'),
+              onTap: () {
+                Navigator.pop(context); // Drawer schließen
+                Navigator.push(
+                  context,
+                  MaterialPageRoute(
+                    builder: (_) => const ErrorMarkersPage(), // alle Marker
+                  ),
+                );
+              },
             ),
           ],
         ),
@@ -304,9 +322,7 @@ class _HomepageState extends State<Homepage> {
     return Column(
       children: [
         GestureDetector(
-          onLongPress: () {
-
-          },
+          onLongPress: () {},
           child: Container(
             height: height,
             margin: const EdgeInsets.symmetric(vertical: 16),

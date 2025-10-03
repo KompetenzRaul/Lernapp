@@ -11,15 +11,15 @@ class MusicPlayer extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-  // Ensure provider knows who to notify on completion
-  final provider = context.read<MusicPlaylistProvider>();
-  provider.setOnFinished(onFinished);
-  return Consumer<MusicPlaylistProvider>(
+    // Ensure provider knows who to notify on completion
+    final provider = context.read<MusicPlaylistProvider>();
+    provider.setOnFinished(onFinished);
+    return Consumer<MusicPlaylistProvider>(
       builder: (context, value, child) {
         // Daten holen
         final playlist = value.playlist;
 
-        // Guard: wenn noch keine Daten (erste Firestore-Antwort kommt gleich)
+        // Guard: wenn noch keine Daten
         if (playlist.isEmpty || value.currentSongIndex == null) {
           return const Scaffold(
             body: Center(child: CircularProgressIndicator()),
@@ -33,7 +33,6 @@ class MusicPlayer extends StatelessWidget {
                 : 0;
         final currentSong = playlist[safeIndex];
 
-        // UI unverändert
         return Scaffold(
           appBar: AppBar(
             centerTitle: true,
