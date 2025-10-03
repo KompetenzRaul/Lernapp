@@ -1,9 +1,7 @@
 import 'dart:io';
 import 'package:flutter/material.dart';
-import 'package:file_picker/file_picker.dart';
 import 'package:video_player/video_player.dart';
 import 'package:path/path.dart' as p;
-import 'package:path_provider/path_provider.dart';
 import 'package:permission_handler/permission_handler.dart';
 import 'package:provider/provider.dart';
 
@@ -11,6 +9,7 @@ import '../datamodels/videoPlaylist.dart';
 import '../datamodels/videoElement.dart';
 import '../repository/firestore_repository.dart';
 import '../datamodels/videoPlaylistProvider.dart';
+import '../services/open_document.dart';
 
 class CreateVideoPlaylistPage extends StatefulWidget {
   const CreateVideoPlaylistPage({super.key});
@@ -135,13 +134,9 @@ class _CreateVideoPlaylistPageState extends State<CreateVideoPlaylistPage> {
         return;
       }
 
-      final result = await FilePicker.platform.pickFiles(
-        type: FileType.custom,
-        allowedExtensions: ['mp4', 'mkv', 'mov'],
-        allowMultiple: true,
-      );
-
-      if (result == null || result.files.isEmpty) {
+      // Neuer SAF Picker via MethodChannel
+      final picked = await OpenDocumentService.pickVideos();
+      if (picked.isEmpty) {
         setState(() => _isPicking = false);
         return;
       }
@@ -149,81 +144,37 @@ class _CreateVideoPlaylistPageState extends State<CreateVideoPlaylistPage> {
       final repo = FirestoreRepository();
       int addedCount = 0;
 
-      // Helper to normalize picked file paths (avoid mistaken 'assets/' prefix)
-      String _sanitizePickedPath(String original) {
-        String p0 = original.replaceAll('\\', '/');
-        if (p0.startsWith('assets/')) {
-          p0 = p0.replaceFirst(RegExp(r'^assets/+'), '');
-        }
-        p0 = p0.replaceFirst(RegExp(r'^/+'), '/');
-        return p0;
-      }
+      // (Import in eigenes Verzeichnis entfällt im URI-Modus)
 
-  // Prepare persistent storage directory
-      final docsDir = await getApplicationDocumentsDirectory();
-      final videoTargetDir = Directory(p.join(docsDir.path, 'media', 'video'));
-      if (!await videoTargetDir.exists()) {
-        await videoTargetDir.create(recursive: true);
-      }
-      String _uniqueName(String base) {
-        final ts = DateTime.now().microsecondsSinceEpoch;
-        final name = p.basenameWithoutExtension(base);
-        final ext = p.extension(base);
-        final safeName = name.replaceAll(RegExp(r'[^A-Za-z0-9._-]+'), '_');
-        return '${safeName}_$ts$ext';
-      }
-
-      for (final f in result.files) {
-        final path = f.path;
-        if (path == null) continue;
-        final safePath = _sanitizePickedPath(path);
-        // Persist only when needed to avoid double usage: move from temp if necessary
-        String storedPath = safePath;
+      for (final v in picked) {
+        final uri = v.uri; // garantiert content://
+        debugPrint('[VideoPick] URI -> $uri name=${v.name} size=${v.size}');
+        Duration duration;
         try {
-          final src = File(safePath);
-          if (await src.exists()) {
-            final tmpDir = await getTemporaryDirectory();
-            final isFromTemp = safePath.replaceAll('\\', '/').startsWith(
-              tmpDir.path.replaceAll('\\', '/'),
-            );
-            if (isFromTemp) {
-              final dest = p.join(videoTargetDir.path, _uniqueName(p.basename(safePath)));
-              try {
-                final moved = await src.rename(dest);
-                storedPath = moved.path;
-              } catch (_) {
-                await src.copy(dest);
-                storedPath = dest;
-                try { await src.delete(); } catch (_) {}
-              }
-            } else {
-              storedPath = safePath;
-            }
-          }
-        } catch (e) {
-          debugPrint('Video persist/move failed: $e');
+          final controller = VideoPlayerController.contentUri(Uri.parse(uri));
+          await controller.initialize();
+          duration = controller.value.duration;
+          await controller.dispose();
+        } catch (e, st) {
+          debugPrint('[VideoPick][ERROR] Dauer lesen fehlgeschlagen: $e\n$st');
+          duration = Duration.zero;
         }
 
-        // Dauer via video_player auslesen
-  final controller = VideoPlayerController.file(File(storedPath));
-        await controller.initialize();
-        final duration = controller.value.duration;
-        await controller.dispose();
-
-        final filename = f.name.isNotEmpty ? f.name : p.basename(storedPath);
         final item = VideoElement(
-          name: p.basenameWithoutExtension(filename),
-          filePath: storedPath,
+          name: p.basenameWithoutExtension(v.name),
+          filePath: uri,
           duration: duration.inSeconds.toDouble(),
         )..uid = '';
 
-        // Sofort in UI-Liste
         setState(() => _playlist.playlistContent.add(item));
 
-        // Falls Playlist bereits existiert → direkt hochladen
         if (_playlistId != null) {
-          await repo.addVideoItem(_playlistId!, item);
-          addedCount++;
+          try {
+            await repo.addVideoItem(_playlistId!, item);
+            addedCount++;
+          } catch (e) {
+            debugPrint('[VideoPick][ERROR] Upload fehlgeschlagen: $e');
+          }
         }
       }
 
@@ -236,7 +187,7 @@ class _CreateVideoPlaylistPageState extends State<CreateVideoPlaylistPage> {
           ScaffoldMessenger.of(context).showSnackBar(
             SnackBar(
               content: Text(
-                '${result.files.length} Video(s) hinzugefügt (lokal)',
+                '${picked.length} Video(s) hinzugefügt (URI)',
               ),
             ),
           );

@@ -4,7 +4,7 @@ import 'package:flutter/services.dart';
 import 'package:video_player/video_player.dart';
 import 'dart:io' as io;
 import '../datamodels/error_markers.dart';
-import '../pages/error_markers_page.dart';
+// import '../pages/error_markers_page.dart'; // entfernt (nicht genutzt)
 
 import 'playerController.dart';
 
@@ -170,15 +170,46 @@ class _VideoplayerState extends State<Videoplayer> {
   Future<void> _initializePlayer() async {
     _hasEnded = false; // Reset beim Initialisieren
     final normalizedPath = _normalizeVideoPath(widget.videoPath);
-    if (normalizedPath.startsWith('assets/')) {
-      _videoPlayerController = VideoPlayerController.asset(normalizedPath);
-    } else {
-      _videoPlayerController = VideoPlayerController.file(
-        io.File(normalizedPath),
-      );
-    }
+    try {
+      // Unterscheide verschiedene Quellen: Asset, file:// echter Pfad, content:// URI
+      final src = widget.videoPath;
+      final lower = src.toLowerCase();
+      final isAsset = normalizedPath.startsWith('assets/');
+      final isContent = lower.startsWith('content://');
+      final looksAbsoluteFile = !isContent && !isAsset &&
+          (lower.startsWith('/') || lower.contains(':\\') || lower.contains(':/'));
 
-    await _videoPlayerController.initialize();
+      if (isAsset) {
+        debugPrint('[VideoInit] Asset source: $normalizedPath');
+        _videoPlayerController = VideoPlayerController.asset(normalizedPath);
+      } else if (isContent) {
+        debugPrint('[VideoInit] Content URI source: $src');
+        _videoPlayerController = VideoPlayerController.contentUri(Uri.parse(src));
+      } else if (looksAbsoluteFile && io.File(src).existsSync()) {
+        debugPrint('[VideoInit] File path source: $src');
+        _videoPlayerController = VideoPlayerController.file(io.File(src));
+      } else {
+        // Fallback: versuche zuerst contentUri, dann file
+        debugPrint('[VideoInit][WARN] Unklares Schema, versuche contentUri: $src');
+        try {
+          _videoPlayerController = VideoPlayerController.contentUri(Uri.parse(src));
+        } catch (e) {
+          debugPrint('[VideoInit][Fallback] contentUri fehlgeschlagen ($e), versuche file()');
+          _videoPlayerController = VideoPlayerController.file(io.File(src));
+        }
+      }
+
+      await _videoPlayerController.initialize();
+      debugPrint('[VideoInit] Initialisiert. Dauer=${_videoPlayerController.value.duration} Aspect=${_videoPlayerController.value.aspectRatio}');
+    } catch (e, st) {
+      debugPrint('[VideoInit][ERROR] Initialisierung fehlgeschlagen: $e\n$st');
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('Video konnte nicht geladen werden: $e')),
+        );
+      }
+      return; // Abbrechen, kein Chewie anlegen
+    }
 
     _onVideoEndListener = () {
       final value = _videoPlayerController.value;

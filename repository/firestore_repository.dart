@@ -200,7 +200,13 @@ class FirestoreRepository {
     for (final d in items.docs) {
       batch.delete(d.reference);
     }
-    batch.delete(_db.collection(_videoPlaylistsCol).doc(playlistId));
+    batch.delete(
+      _db
+          .collection(FirebaseAuth.instance.currentUser!.uid)
+          .doc("data")
+          .collection(_videoPlaylistsCol)
+          .doc(playlistId),
+    );
     await batch.commit();
   }
 
@@ -238,7 +244,7 @@ class FirestoreRepository {
         .doc(playlistId)
         .collection(_itemsSubCol)
         .doc(item.name);
-    ref.set(item.toMap());
+  await ref.set(data);
     return ref.id;
   }
 
