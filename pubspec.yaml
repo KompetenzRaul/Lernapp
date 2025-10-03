@@ -80,6 +80,7 @@ flutter_launcher_icons:
   image_path: "assets/icon.png"
   adaptive_icon_background: "assets/icon.png"  
   adaptive_icon_foreground: "assets/icon.png"
+  adaptive_icon_monochrome: "assets/monochrome-icon.png"
 
   # An image asset can refer to one or more resolution-specific "variants", see
   # https://flutter.dev/to/resolution-aware-images
