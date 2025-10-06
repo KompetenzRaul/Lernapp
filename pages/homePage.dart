@@ -37,16 +37,46 @@ class _HomepageState extends State<Homepage> {
             : _selectedMusicPlaylist == name;
 
     return GestureDetector(
-      onLongPress: () async {
-        QuerySnapshot snap =
-            await FirebaseFirestore.instance
-                .collection(FirebaseAuth.instance.currentUser!.uid)
-                .doc("data")
-                .collection(isVideo ? "videoPlaylists" : "musicPlaylists")
-                .limit(100)
-                .where("name", isEqualTo: name)
-                .get();
-        snap.docs[0].reference.delete();
+      onLongPress: () {
+        showDialog(
+          context: context,
+          builder: (BuildContext context) {
+            return AlertDialog(
+              title: Text("'$name' löschen?"),
+              content: const Text('Bist du sicher, dass du diese Playlist löschen möchtest?'),
+              actions: [
+                TextButton(
+                  onPressed: () {
+                    Navigator.of(context).pop();
+                  },
+                  child: const Text('Abbrechen'),
+                ),
+                TextButton(
+                  onPressed: () async{
+                    {
+                      QuerySnapshot snap =
+                      await FirebaseFirestore.instance
+                          .collection(FirebaseAuth.instance.currentUser!.uid)
+                          .doc("data")
+                          .collection(isVideo ? "videoPlaylists" : "musicPlaylists")
+                          .limit(100)
+                          .where("name", isEqualTo: name)
+                          .get();
+                      snap.docs[0].reference.delete();
+                    }
+                    Navigator.of(context).pop();
+
+                    ScaffoldMessenger.of(context).showSnackBar(
+                      SnackBar(content: Text('Playlist "${name}" gelöscht')),
+                    );
+                  },
+                  style: TextButton.styleFrom(foregroundColor: Colors.red),
+                  child: const Text('Löschen'),
+                ),
+              ],
+            );
+          },
+        );
       },
       child: Container(
         width: 100,
